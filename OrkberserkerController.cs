@@ -189,6 +189,8 @@ public class OrkberserkerController : MonoBehaviour
         animator.SetTrigger("Dead");
         audiosource.PlayOneShot(orkBerserkerDeath);
         yield return new WaitForSeconds(deadTime);
+        gameManager.lastBossBattle = false;
+        gameManager.gameClear = true;
         Destroy(gameObject);
     }
 

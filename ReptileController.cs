@@ -23,6 +23,7 @@ public class ReptileController : MonoBehaviour
     [SerializeField] string targetTag = "Player";
     [SerializeField] float deadTime = 3;
     [SerializeField] GameObject miniReptile;
+    [SerializeField] GameObject Sphere;
 
     public AudioClip reptileAttack;
     public AudioClip reptileDeath;
@@ -33,6 +34,7 @@ public class ReptileController : MonoBehaviour
     bool raging = false;
     bool staning = false;
     bool destroyed = false;
+    bool Audistop = false;
     int hp;
     int attackNum = 0;
     float moveSpeed;
@@ -51,13 +53,13 @@ public class ReptileController : MonoBehaviour
         set
         {
             hp = Mathf.Clamp(value, 0, maxHp);
+            //Debug.Log(hp);
             if (hp <= maxHp / 2)
                 raging = true;
             if (hp % (maxHp / 5) == 0 && hp != maxHp && hp != 0)
                 StartCoroutine(Stan());
             if (hp <= 0 && !destroyed)
             {
-                gameManager.bossBattle = false;
                 destroyed = true;
                 StartCoroutine(Dead());
             }
@@ -76,10 +78,11 @@ public class ReptileController : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         meshCollider = GameObject.FindGameObjectWithTag("Reptile").GetComponent<MeshCollider>();
         audiosource = GetComponent<AudioSource>();
-        bossBGMSource= GameObject.FindGameObjectWithTag("Reptile").GetComponent<AudioSource>();
+        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
+        if (!player.reptileKilled)
+            bossBGMSource= GameObject.FindGameObjectWithTag("BossAudioSource3").GetComponent<AudioSource>();
         target = GameObject.FindGameObjectWithTag(targetTag).transform;
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
         InitCharacter();
     }
 
@@ -91,7 +94,7 @@ public class ReptileController : MonoBehaviour
     // Update is called once per frame
     void Update()
     { 
-        if (destroyed)
+        if (!player.reptileKilled && destroyed)
             bossBGMSource.volume -= Time.deltaTime / 7;
         if (reptileMoveEnabled)
         {
@@ -150,10 +153,9 @@ public class ReptileController : MonoBehaviour
                 Vector3 position = new Vector3(transform.position.x + diffPositionX, transform.position.y, transform.position.z + diffPositionZ);
                 Instantiate(miniReptile, position, Quaternion.identity);
             }
+            Instantiate(Sphere, new Vector3(transform.position.x, transform.position.y+1.0f,transform.position.z), Quaternion.identity);
         }
         yield return new WaitForSeconds(deadTime);
-        if(!player.normalBGMSource.enabled)
-            player.normalBGMSource.enabled = true;
         Destroy(gameObject);
     }
 

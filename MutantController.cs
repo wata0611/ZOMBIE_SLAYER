@@ -133,6 +133,7 @@ public class MutantController : MonoBehaviour
             Stop();
             gameManager.Score += score;
             gameManager.Kill++;
+            gameManager.totalKill++;
             animator.SetTrigger("Dead");
             rigidbody.isKinematic = true;
             audiosource.PlayOneShot(mutantDeath);

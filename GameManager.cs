@@ -8,10 +8,12 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField] int maxScore = 99999999;
     [SerializeField] int maxKill = 100;
-    [SerializeField] Canvas mainCanvas;
-    [SerializeField] Canvas titleCanvas;
+    //[SerializeField] Canvas mainCanvas;
+    //[SerializeField] Canvas titleCanvas;
+    [SerializeField] GameObject pauseCanvas;
     [SerializeField] Text scoreText;
     [SerializeField] Text killText;
+    [SerializeField] Text totalKillText;
     [SerializeField] FirstPersonAIO firstPerson;
     [SerializeField] FirstPersonGunController gunController;
     [SerializeField] Text centerText;
@@ -26,16 +28,21 @@ public class GameManager : MonoBehaviour
     public AudioClip nextRound;
     public AudioClip bonus;
     public AudioClip playerDeath;
-    AudioSource audioSource;
+    public AudioSource audioSource;
 
     int score = 0;
     int kill = 0;
+    public int totalKill = 0;
     int bonusScore;
     double tmpBonusScore;
     public int round = 1;
-    bool gameOver = false;
-    bool gameClear = false;
+    public bool gameOver = false;
+    bool roundClear = false;
+    public bool gameClear = false;
     public bool bossBattle = false;
+    public bool lastBossBattle = false;
+    bool once = false;
+    bool wait = true;
     FirstPersonGunController player;
     M4A1Controller M4A1;
     LMGController LMG;
@@ -76,6 +83,7 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        SceneManager.UnloadScene("Title");
         InitGame();
         bonusScore = 0;
         tmpBonusScore = 0;
@@ -86,19 +94,36 @@ public class GameManager : MonoBehaviour
         HandGun = GameObject.FindGameObjectWithTag("HandGun").GetComponent<HandGunController>();
         ScifiGun= GameObject.FindGameObjectWithTag("ScifiGun").GetComponent<ScifiGunController>();
         Knife = GameObject.FindGameObjectWithTag("Knife").GetComponent<KnifeController>();
+        pauseCanvas.SetActive(false);
         StartCoroutine(GameStart());
         m = new Material(RenderSettings.skybox);
         RenderSettings.skybox = m;
     }
+
     void Update()
     {
-        m.SetFloat("_Rotation", Mathf.Repeat(m.GetFloat("_Rotation") + Time.deltaTime, 360f));
+        //PauseManager();
+        if (player.end && wait)
+        {
+            wait = false;
+            StartCoroutine(SceneChanger());
+        }
+        if(bossBattle)
+            m.SetFloat("_Rotation", Mathf.Repeat(m.GetFloat("_Rotation") + Time.deltaTime * 4, 360f));
+        else if(lastBossBattle)
+            m.SetFloat("_Rotation", Mathf.Repeat(m.GetFloat("_Rotation") + Time.deltaTime * 8, 360f));
+        else
+            m.SetFloat("_Rotation", Mathf.Repeat(m.GetFloat("_Rotation") + Time.deltaTime, 360f));
         SkyColorChanger();
-        if (player.PlayerHP <= 0)
+        if (player.PlayerHP <= 0 && once == false)
+        {
+            once = true;
             StartCoroutine(GameOver());
+        }
         if (kill >= maxKill)
             StartCoroutine(Rounder());
         killText.text = Kill.ToString("D3") + "/" + maxKill.ToString();
+        totalKillText.text = totalKill.ToString("D3");
         if(player.haveWeapon1 == FirstPersonGunController.HaveWeapon.M4A1)
             weaponLevelText.text = M4A1.GetUnlockedLevel().ToString();
         else if (player.haveWeapon1 == FirstPersonGunController.HaveWeapon.LMG)
@@ -109,8 +134,32 @@ public class GameManager : MonoBehaviour
             weaponLevelText.text = ScifiGun.GetUnlockedLevel().ToString();
         else if (player.haveWeapon1 == FirstPersonGunController.HaveWeapon.Knife)
             weaponLevelText.text = "-";
-        roundText.text = round.ToString();   
+        roundText.text = round.ToString();
+        if (gameClear && once == false)
+        {
+            once = true;
+            StartCoroutine(GameClear());
+        }
     }
+
+    void PauseManager()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            print("pause");
+            //pauseCanvas.SetActive(true);
+            //Time.timeScale = 0f;
+            firstPerson.enabled = false;
+        }
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            print("unpause");
+            //Time.timeScale = 1f;
+            //pauseCanvas.SetActive(false);
+            firstPerson.enabled = true; ;
+        }
+    }
+
     void SkyColorChanger()
     {
         if (bossBattle)
@@ -124,7 +173,18 @@ public class GameManager : MonoBehaviour
                 c.b -= Time.deltaTime * 3 / 255f; ;
             m.SetColor("_Tint", c);
         }
-        else
+        if (lastBossBattle)
+        {
+            var c = m.GetColor("_Tint");
+            if (c.r <= 1f)
+                c.r += Time.deltaTime * 3 / 255f;
+            if (c.g >= 1f / 255f)
+                c.g -= Time.deltaTime * 3 / 255f;
+            if (c.b >= 1f / 255f)
+                c.b -= Time.deltaTime * 3 / 255f; ;
+            m.SetColor("_Tint", c);
+        }
+        if(!bossBattle && !lastBossBattle)
         {
             var c = m.GetColor("_Tint");
             if (c.r >= 128f / 255f)
@@ -179,36 +239,50 @@ public class GameManager : MonoBehaviour
 
     public IEnumerator GameOver()
     {
-        if (!gameOver)
-        {
-            gameOver = true;
-            firstPerson.playerCanMove = false;
-            firstPerson.enableCameraMovement = false;
-            gunController.shootEnabled = false;
-            SetSpawners(false);
-            centerText.enabled = true;
-            centerText.text = "Game Over\n"+"Score "+ Score.ToString();
-            StopEnemies();
-            audioSource.PlayOneShot(playerDeath);
-            yield return new WaitForSeconds(waitDeath);
-            //DestroyEnemies();
-            centerText.text = "";
-            centerText.enabled = false;
-            gameOver = false;
-            yield return SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
-        }
-
-        else
-        {
-            yield return null;
-        }
+        gameOver = true;
+        firstPerson.playerCanMove = false;
+        firstPerson.enableCameraMovement = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        gunController.shootEnabled = false;
+        SetSpawners(false);
+        centerText.enabled = true;
+        centerText.text = "Game Over\n" + "Score " + Score.ToString();
+        StopEnemies();
+        audioSource.PlayOneShot(playerDeath);
+        yield return new WaitForSeconds(waitDeath);
+        centerText.text = "";
+        centerText.enabled = false;
+        //gameOver = false;
+        naichilab.RankingLoader.Instance.SendScoreAndShowRanking(Score);
+        //yield return SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
 
+    IEnumerator GameClear()
+    {
+        gameClear = true;
+        firstPerson.playerCanMove = false;
+        firstPerson.enableCameraMovement = true;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        gunController.shootEnabled = false;
+        SetSpawners(false);
+        centerText.enabled = true;
+        centerText.text = "Game Clear!!";
+        StopEnemies();
+        DestroyEnemies();
+        yield return new WaitForSeconds(waitTime);
+        centerText.text = "";
+        centerText.enabled = false;
+        //gameClear = false;
+        naichilab.RankingLoader.Instance.SendScoreAndShowRanking(Score);
+        //yield return SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
+    }
     public IEnumerator Rounder()
     {
-        if (!gameClear)
+        if (!roundClear)
         {
-            gameClear = true;
+            roundClear = true;
             round++;
             Kill = 0;
             maxKill = round * 5;
@@ -237,56 +311,53 @@ public class GameManager : MonoBehaviour
             SetSpawners(true);
             player.hitCount = 0;
             player.shootCount = 0;
-            gameClear = false;
+            roundClear = false;
         }
         yield return null;
     }
 
-   /** public IEnumerator GameClear()
+    IEnumerator SceneChanger()
     {
-        if (!gameClear)
+        Debug.Log(1);
+        yield return new WaitForSeconds(4.0f);
+        Debug.Log(2);
+        if (gameClear)
         {
-            gameClear = true;
-            firstPerson.playerCanMove = false;
-            firstPerson.enableCameraMovement = true;
-            gunController.shootEnabled = false;
-            SetSpawners(false);
-            centerText.enabled = true;
-            centerText.text = "Game Clear!!";
-            StopEnemies();
-            yield return new WaitForSeconds(waitTime);
-            centerText.text = "";
-            centerText.enabled = false;
-            gameClear = false;
-            yield return SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
+            Debug.Log("Clear");
+            SceneManager.LoadScene("Ending");
         }
-
-        else
+        else if (gameOver)
         {
-            yield return null;
+            Debug.Log("GameOver");
+            SceneManager.LoadScene("Title");
         }
-    }**/
+    }
 
     void StopEnemies()
     {
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-
+        GameObject[] mutants = GameObject.FindGameObjectsWithTag("Mutant");
         foreach(GameObject enemy in enemies)
         {
             EnemyController controller = enemy.GetComponent<EnemyController>();
             controller.moveEnabled = false;
         }
+        foreach(GameObject mutant in mutants)
+        {
+            MutantController mController = mutant.GetComponent<MutantController>();
+            mController.mutantMoveEnabled = false;
+        }
     }
 
-    /*** void DestroyEnemies()
-     {
-         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-         foreach (GameObject enemy in enemies)
-         {
-             Destroy(enemy);
-         }
-     }
-     ***/
+    void DestroyEnemies()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        GameObject[] mutants = GameObject.FindGameObjectsWithTag("Mutant");
+        foreach (GameObject enemy in enemies)
+            Destroy(enemy);
+        foreach (GameObject mutant in mutants)
+            Destroy(mutant);
+    }
 
     void SetSpawners(bool isEnable)
     {

@@ -12,9 +12,9 @@ public class UIKeyController : MonoBehaviour
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        redKey = GameObject.FindGameObjectWithTag("RedKey");
-        yellowKey = GameObject.FindGameObjectWithTag("YellowKey");
-        blueKey = GameObject.FindGameObjectWithTag("BlueKey");
+        redKey = transform.GetChild(0).gameObject;
+        yellowKey = transform.GetChild(1).gameObject;
+        blueKey = transform.GetChild(2).gameObject;
         redKey.SetActive(false);
         yellowKey.SetActive(false);
         blueKey.SetActive(false);

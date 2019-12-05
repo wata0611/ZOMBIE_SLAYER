@@ -42,6 +42,8 @@ public class FirstPersonGunController : MonoBehaviour
     public AudioClip beatSound;
     public AudioClip playerDamgeVoice;
     public AudioClip getKey;
+    public AudioClip getSphere;
+    public AudioClip close;
     public AudioSource audioSource;
     public AudioSource normalBGMSource;
 
@@ -64,16 +66,24 @@ public class FirstPersonGunController : MonoBehaviour
     public bool getYellowKey = false;
     public bool getBlueKey = false;
     public int getKeyCount = 0;
+    public int heelLevel = 1;
+    public int repairLevel = 1;
+    public bool getTitanSphere = false;
+    public bool getReptileSphere = false;
+    public bool getMagmadarSphere = false;
     public bool reptileKilled = false;
     public bool gotM4A1 = false;
     public bool gotLMG = false;
     public bool gotScifiGun = false;
+    public bool end = false;
     int ammo = 0;
     int damage = 0;
     int magazine = 0;
     int maxMagzie = 0;
     int playerHP = 0;
     int tmpPlayerHP = 0;
+    int tmpHeelLevel = 0;
+    int tmpRepairLevel = 0;
     int motionCount = 1;
     public double shootCount;
     public double hitCount;
@@ -157,7 +167,8 @@ public class FirstPersonGunController : MonoBehaviour
         set
         {
             playerHP = Mathf.Clamp(value, 0, maxPlayerHP);
-
+            if (playerHP <= 0)
+                Knife.GetComponent<KnifeController>().attackEnabled = false;
             //UIの表示を操作
             //テキスト
 
@@ -187,6 +198,8 @@ public class FirstPersonGunController : MonoBehaviour
         shootCount = 0;
         hitCount = 0;
         tmpPlayerHP = maxPlayerHP;
+        tmpHeelLevel = heelLevel;
+        tmpRepairLevel = repairLevel;
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         warehouse = GameObject.FindGameObjectWithTag("Warehouse").GetComponentInChildren<WarehouseController>();
         audioSource = GetComponent<AudioSource>();
@@ -209,38 +222,30 @@ public class FirstPersonGunController : MonoBehaviour
         Knife = GameObject.FindGameObjectWithTag("Knife");
         weaponOut = GameObject.FindGameObjectWithTag("WeaponOut").GetComponent<Transform>();
         knifeStart= GameObject.FindGameObjectWithTag("KnifeStart").GetComponent<Transform>();
+        M4A1Obj.SetActive(false);
+        LMGObj.SetActive(false);
+        HandGunObj.SetActive(false);
+        HandGun2Obj.SetActive(false);
+        ScifiGunObj.SetActive(false);
+        Knife.SetActive(false);
         ObjSetActiveManager();
     }
 
     void ObjSetActiveManager()
     {
-        if (haveWeapon1 == HaveWeapon.M4A1)
+        if (haveWeapon1 == HaveWeapon.M4A1 || haveWeapon2 == HaveWeapon.M4A1)
+            M4A1Obj.SetActive(true);
+        if(haveWeapon1 == HaveWeapon.HandGun || haveWeapon2 == HaveWeapon.HandGun)
         {
-            LMGObj.SetActive(false);
-            HandGunObj.SetActive(false);
-            HandGun2Obj.SetActive(false);
-            ScifiGunObj.SetActive(false);
+            HandGunObj.SetActive(true);
+            HandGun2Obj.SetActive(true);
         }
-        else if(haveWeapon1 == HaveWeapon.HandGun)
-        {
-            LMGObj.SetActive(false);
-            M4A1Obj.SetActive(false);
-            ScifiGunObj.SetActive(false);
-        }
-        else if (haveWeapon1 == HaveWeapon.LMG)
-        {
-            M4A1Obj.SetActive(false);
-            HandGunObj.SetActive(false);
-            HandGun2Obj.SetActive(false);
-            ScifiGunObj.SetActive(false);
-        }
-        else if (haveWeapon1 == HaveWeapon.ScifiGun)
-        {
-            M4A1Obj.SetActive(false);
-            HandGunObj.SetActive(false);
-            HandGun2Obj.SetActive(false);
-            LMGObj.SetActive(false);
-        }
+        if (haveWeapon1 == HaveWeapon.LMG || haveWeapon2 == HaveWeapon.LMG)
+            LMGObj.SetActive(true);
+        if (haveWeapon1 == HaveWeapon.ScifiGun || haveWeapon2 == HaveWeapon.ScifiGun)
+            ScifiGunObj.SetActive(true);
+        if(haveWeapon1 == HaveWeapon.Knife || haveWeapon2 == HaveWeapon.Knife)
+            Knife.SetActive(true);
     }
 
     IEnumerator BeatSoundTimer()
@@ -261,21 +266,36 @@ public class FirstPersonGunController : MonoBehaviour
             damageEffect.color = new Color(10f / 255f, 128f / 255f, 44f / 255f, 90f / 255f);
             tmpPlayerHP = PlayerHP;
         }
+        if (tmpPlayerHP > PlayerHP)
+        {
+            if (PlayerHP > maxPlayerHP / 5)
+                damageEffect.color = new Color(128f / 255f, 10f / 255f, 10f / 255f, 90f / 255f);
+            tmpPlayerHP = PlayerHP;
+            audioSource.PlayOneShot(playerDamgeVoice);
+        }
 
-        if(PlayerHP <= maxPlayerHP / 5)
+        if (tmpHeelLevel < heelLevel)
+        {
+            damageEffect.color = new Color(97f / 255f, 0f / 255f, 255f / 255f, 90f / 255f);
+            tmpHeelLevel = heelLevel;
+        }
+
+        if (tmpRepairLevel < repairLevel)
+        {
+            damageEffect.color = new Color(97f / 255f, 0f / 255f, 255f / 255f, 90f / 255f);
+            tmpRepairLevel = repairLevel;
+        }
+        if (end)
+            damageEffect.color = Color.Lerp(damageEffect.color, new Color(0f, 0f, 0f, 1f), Time.deltaTime);
+
+        else if (PlayerHP <= maxPlayerHP / 5)
         {
             //BeatSoundTimer();
             damageEffect.color = new Color(128f / 255f, 10f / 255f, 10f / 255f, Mathf.Sin(2 * Mathf.PI / 3 * Time.time) * (120f/ 255f));
         }
 
-        if (tmpPlayerHP > PlayerHP)
-        {
-            if(PlayerHP > maxPlayerHP / 5)
-                damageEffect.color = new Color(128f / 255f, 10f / 255f, 10f / 255f, 90f / 255f);
-            tmpPlayerHP = PlayerHP;
-            audioSource.PlayOneShot(playerDamgeVoice);
-        }
-        damageEffect.color = Color.Lerp(damageEffect.color, Color.clear, Time.deltaTime);
+        else
+            damageEffect.color = Color.Lerp(damageEffect.color, Color.clear, Time.deltaTime);
     }
 
     void MovingWeapon1()
@@ -325,13 +345,13 @@ public class FirstPersonGunController : MonoBehaviour
 
     void Reroad()
     {
-        if (haveWeapon1 == HaveWeapon.M4A1 && M4A1.Ammo < M4A1.maxAmmo && M4A1.Magazine > 0 && Input.GetKey(KeyCode.M))
+        if (haveWeapon1 == HaveWeapon.M4A1 && M4A1.Ammo < M4A1.maxAmmo && M4A1.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
             StartCoroutine(ReroadTimer());
-        else if (haveWeapon1 == HaveWeapon.LMG && LMG.Ammo < LMG.maxAmmo && LMG.Magazine > 0 && Input.GetKey(KeyCode.M))
+        else if (haveWeapon1 == HaveWeapon.LMG && LMG.Ammo < LMG.maxAmmo && LMG.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
             StartCoroutine(ReroadTimer());
-        else if (haveWeapon1 == HaveWeapon.HandGun && HandGun.Ammo < HandGun.maxAmmo && HandGun.Magazine > 0 && Input.GetKey(KeyCode.M))
+        else if (haveWeapon1 == HaveWeapon.HandGun && HandGun.Ammo < HandGun.maxAmmo && HandGun.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
             StartCoroutine(ReroadTimer());
-        else if(haveWeapon1 == HaveWeapon.ScifiGun && ScifiGun.Ammo < ScifiGun.maxAmmo && ScifiGun.Magazine > 0 && Input.GetKey(KeyCode.M))
+        else if(haveWeapon1 == HaveWeapon.ScifiGun && ScifiGun.Ammo < ScifiGun.maxAmmo && ScifiGun.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
             StartCoroutine(ReroadTimer());
     }
 
@@ -369,31 +389,29 @@ public class FirstPersonGunController : MonoBehaviour
 
             if (haveWeapon1 == HaveWeapon.LMG)
             {
-                LMG.MuzzleFlash();
-                LMG.Shake();
+                shoot();
                 audioSource.PlayOneShot(LMG.shootSound);
                 yield return new WaitForSeconds(LMG.shootInterval);
                 if (LMG.muzzleFlash != null)
                     LMG.muzzleFlash.SetActive(false);
-                shoot();
+                LMG.Shake();
             }
 
             if (haveWeapon1 == HaveWeapon.HandGun)
             {
-                HandGun.MuzzleFlash();
-                HandGun.Shake();
+                shoot();
                 audioSource.PlayOneShot(HandGun.shootSound);
                 yield return new WaitForSeconds(HandGun.shootInterval);
                 if (HandGun.muzzleFlash != null)
                     HandGun.muzzleFlash.SetActive(false);
-                shoot();
+                HandGun.Shake();
             }
 
             if (haveWeapon1 == HaveWeapon.ScifiGun)
             {
+                shoot();
                 audioSource.PlayOneShot(ScifiGun.shootSound);
                 yield return new WaitForSeconds(ScifiGun.shootInterval);
-                shoot();
             }
             shooting = false;
         }
@@ -524,7 +542,7 @@ public class FirstPersonGunController : MonoBehaviour
         if (!repairing)
         {
             repairing = true;
-            warehouse.WarehouseHP += 5;
+            warehouse.WarehouseHP += 5 * repairLevel;
             gameManager.Score -= repairScore;
             audioSource.PlayOneShot(repairSound);
             yield return new WaitForSeconds(repairInterval);
@@ -537,7 +555,7 @@ public class FirstPersonGunController : MonoBehaviour
         if (!heeling)
         {
             heeling = true;
-            PlayerHP++;
+            PlayerHP += 1 * heelLevel;
             gameManager.Score -= heelScore;
             audioSource.PlayOneShot(heelSound);
             yield return new WaitForSeconds(heelInterval);
@@ -565,7 +583,7 @@ public class FirstPersonGunController : MonoBehaviour
         if (!enhancedPlayerWalkSpeed)
         {
             enhancedPlayerWalkSpeed = true;
-            firstPersonAIO.walkSpeed +=2f;
+            firstPersonAIO.walkSpeed += 2f;
             gameManager.Score -= enhancePlayerWalkSpeedScore;
             audioSource.PlayOneShot(heelSound);
             damageEffect.color = new Color(222f / 255f, 244f / 255f, 135f / 255f, 150f / 255f);

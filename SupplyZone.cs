@@ -8,7 +8,7 @@ public class SupplyZone : MonoBehaviour
 
     [SerializeField] Text discriptionText;
     [SerializeField] bool supplyEnabled = true;
-
+    int tmpWarehouseHP = 0;
     FirstPersonGunController player;
     WarehouseController warehouse;
     GameManager gameManager;
@@ -69,11 +69,15 @@ public class SupplyZone : MonoBehaviour
         SupplyChanger();
     }
 
-    void SupplyChanger()
+    public void SupplyChanger()
     {
-        if (warehouse.WarehouseHP <= 0)
-            supplyEnabled = false;
-        if(warehouse.WarehouseHP == warehouse.GetMaxWarehouseHP()/5)
-            supplyEnabled = true;
+        if (tmpWarehouseHP != warehouse.WarehouseHP)
+        {
+            if (warehouse.WarehouseHP <= 0)
+                supplyEnabled = false;
+            if (warehouse.WarehouseHP >= warehouse.GetMaxWarehouseHP() / 5)
+                supplyEnabled = true;
+            tmpWarehouseHP = warehouse.WarehouseHP;
+        }
     }
 }

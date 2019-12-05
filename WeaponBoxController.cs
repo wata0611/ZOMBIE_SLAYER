@@ -66,7 +66,7 @@ public class WeaponBoxController : MonoBehaviour
         int random = Random.Range(1, 101);
         if (random <= 40)
             choosedIndex = 0;
-        else if (41 <= random && random <= 70)
+        else if (41 <= random && random <= 80)
             choosedIndex = 1;
         else
             choosedIndex = 2;

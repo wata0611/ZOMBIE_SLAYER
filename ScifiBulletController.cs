@@ -31,132 +31,129 @@ public class ScifiBulletController : MonoBehaviour
     void OnCollisionStay(Collision collision)
     {
         string tagName = collision.gameObject.tag;
-        if (ScifiGun.bulletMode == ScifiGunController.BulletMode.EXPLOSION)
+        if (tagName == "EnemyHead")
         {
-            if (tagName == "EnemyHead")
-            {
-                gameManager.Score += gameManager.headScore;
-                EnemyController enemy = collision.transform.parent.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage * 5;
-                player.hitCount++;
-            }
-            if (tagName == "Enemy")
+            gameManager.Score += gameManager.headScore;
+            EnemyController enemy = collision.transform.parent.gameObject.GetComponent<EnemyController>();
+            enemy.Hp -= damage * 5;
+            player.hitCount++;
+        }
+        if (tagName == "Enemy")
+        {
+            gameManager.Score += gameManager.bodyScore;
+            EnemyController enemy = collision.gameObject.GetComponent<EnemyController>();
+            enemy.Hp -= damage;
+            player.hitCount++;
+        }
+        if (tagName == "Mutant")
+        {
+            MutantController mutant = collision.transform.root.gameObject.GetComponent<MutantController>();
+            if (!mutant.GetDestroyed())
             {
                 gameManager.Score += gameManager.bodyScore;
-                EnemyController enemy = collision.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage;
+                mutant.MutantHp -= damage;
                 player.hitCount++;
             }
-            if (tagName == "Mutant")
+        }
+        if (tagName == "MutantHead")
+        {
+            MutantController mutant = collision.transform.root.gameObject.GetComponent<MutantController>();
+            if (!mutant.GetDestroyed())
             {
-                MutantController mutant = collision.transform.root.gameObject.GetComponent<MutantController>();
-                if (!mutant.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.bodyScore;
-                    mutant.MutantHp -= damage;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.headScore;
+                mutant.MutantHp -= damage * 5;
+                player.hitCount++;
             }
-            if (tagName == "MutantHead")
+        }
+        if (tagName == "Titan")
+        {
+            TitanController titan = collision.transform.gameObject.GetComponent<TitanController>();
+            if (!titan.GetDestroyed())
             {
-                MutantController mutant = collision.transform.root.gameObject.GetComponent<MutantController>();
-                if (!mutant.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.headScore;
-                    mutant.MutantHp -= damage * 5;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.bodyScore;
+                titan.TitanHp -= damage;
+                player.hitCount++;
             }
-            if (tagName == "Titan")
+        }
+        if (tagName == "TitanHead")
+        {
+            TitanController titan = collision.transform.root.gameObject.GetComponent<TitanController>();
+            if (!titan.GetDestroyed())
             {
-                TitanController titan = collision.transform.gameObject.GetComponent<TitanController>();
-                if (!titan.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.bodyScore;
-                    titan.TitanHp -= damage;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.headScore;
+                titan.TitanHp -= damage * 5;
+                player.hitCount++;
             }
-            if (tagName == "TitanHead")
+        }
+        if (tagName == "Reptile")
+        {
+            ReptileController reptile = collision.transform.root.gameObject.GetComponent<ReptileController>();
+            if (!reptile.GetDestroyed())
             {
-                TitanController titan = collision.transform.root.gameObject.GetComponent<TitanController>();
-                if (!titan.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.headScore;
-                    titan.TitanHp -= damage * 5;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.bodyScore;
+                reptile.ReptileHp -= damage;
+                player.hitCount++;
             }
-            if (tagName == "Reptile")
+        }
+        if (tagName == "ReptileHead")
+        {
+            ReptileController reptile = collision.transform.gameObject.GetComponent<ReptileController>();
+            if (!reptile.GetDestroyed())
             {
-                ReptileController reptile = collision.transform.root.gameObject.GetComponent<ReptileController>();
-                if (!reptile.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.bodyScore;
-                    reptile.ReptileHp -= damage;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.headScore;
+                reptile.ReptileHp -= damage * 5;
+                player.hitCount++;
             }
-            if (tagName == "ReptileHead")
+        }
+        if (tagName == "Magmadar")
+        {
+            MagmadarController magmadar = collision.transform.root.gameObject.GetComponent<MagmadarController>();
+            if (!magmadar.GetDestroyed())
             {
-                ReptileController reptile = collision.transform.gameObject.GetComponent<ReptileController>();
-                if (!reptile.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.headScore;
-                    reptile.ReptileHp -= damage * 5;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.bodyScore;
+                magmadar.MagmadarHp -= damage;
+                player.hitCount++;
             }
-            if (tagName == "Magmadar")
+        }
+        if (tagName == "MagmadarHead")
+        {
+            MagmadarController magmadar = collision.transform.root.gameObject.GetComponent<MagmadarController>();
+            if (!magmadar.GetDestroyed())
             {
-                MagmadarController magmadar = collision.transform.root.gameObject.GetComponent<MagmadarController>();
-                if (!magmadar.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.bodyScore;
-                    magmadar.MagmadarHp -= damage;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.headScore;
+                magmadar.MagmadarHp -= damage * 5;
+                player.hitCount++;
             }
-            if (tagName == "MagmadarHead")
+        }
+        if (tagName == "OrkBerserker")
+        {
+            OrkberserkerController orkBerserker = collision.transform.root.gameObject.GetComponent<OrkberserkerController>();
+            if (!orkBerserker.GetDestroyed())
             {
-                MagmadarController magmadar = collision.transform.root.gameObject.GetComponent<MagmadarController>();
-                if (!magmadar.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.headScore;
-                    magmadar.MagmadarHp -= damage * 5;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.bodyScore;
+                orkBerserker.OrkBerserkerHp -= damage;
+                player.hitCount++;
             }
-            if (tagName == "OrkBerserker")
+        }
+        if (tagName == "OrkBerserkerWeapon")
+        {
+            OrkberserkerController orkBerserker = collision.transform.root.gameObject.GetComponent<OrkberserkerController>();
+            if (!orkBerserker.GetDestroyed())
             {
-                OrkberserkerController orkBerserker = collision.transform.root.gameObject.GetComponent<OrkberserkerController>();
-                if (!orkBerserker.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.bodyScore;
-                    orkBerserker.OrkBerserkerHp -= damage;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.bodyScore;
+                orkBerserker.OrkBerserkerHp -= damage;
+                orkBerserker.OrkBerserkerWeaponHP -= damage;
+                player.hitCount++;
             }
-            if (tagName == "OrkBerserkerWeapon")
+        }
+        if (tagName == "OrkBerserkerHead")
+        {
+            OrkberserkerController orkBerserker = collision.transform.root.gameObject.GetComponent<OrkberserkerController>();
+            if (!orkBerserker.GetDestroyed())
             {
-                OrkberserkerController orkBerserker = collision.transform.root.gameObject.GetComponent<OrkberserkerController>();
-                if (!orkBerserker.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.bodyScore;
-                    orkBerserker.OrkBerserkerHp -= damage;
-                    orkBerserker.OrkBerserkerWeaponHP -= damage;
-                    player.hitCount++;
-                }
-            }
-            if (tagName == "OrkBerserkerHead")
-            {
-                OrkberserkerController orkBerserker = collision.transform.root.gameObject.GetComponent<OrkberserkerController>();
-                if (!orkBerserker.GetDestroyed())
-                {
-                    gameManager.Score += gameManager.headScore;
-                    orkBerserker.OrkBerserkerHp -= damage * 5;
-                    player.hitCount++;
-                }
+                gameManager.Score += gameManager.headScore;
+                orkBerserker.OrkBerserkerHp -= damage * 5;
+                player.hitCount++;
             }
         }
         if (tagName != "ScifiGunObj" && tagName != "Player")

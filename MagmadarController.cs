@@ -26,6 +26,7 @@ public class MagmadarController : MonoBehaviour
     [SerializeField] int score = 2500;
     [SerializeField] string targetTag = "Player";
     [SerializeField] float deadTime = 3;
+    [SerializeField] GameObject Sphere;
 
     public AudioClip magmadarAttack;
     public AudioClip magmadarDeath;
@@ -65,7 +66,6 @@ public class MagmadarController : MonoBehaviour
                 StartCoroutine(Stan());
             if (hp <= 0)
             {
-                gameManager.bossBattle = false;
                 destroyed = true;
                 StartCoroutine(Dead());
             }
@@ -152,7 +152,7 @@ public class MagmadarController : MonoBehaviour
         animator.SetTrigger("Dead");
         audiosource.PlayOneShot(magmadarDeath);
         yield return new WaitForSeconds(deadTime);
-        player.normalBGMSource.enabled = true;
+        Instantiate(Sphere, new Vector3(transform.position.x, transform.position.y + 1.0f, transform.position.z), Quaternion.identity);
         Destroy(gameObject);
     }
 
@@ -231,8 +231,11 @@ public class MagmadarController : MonoBehaviour
             else if (attackNum == 2)
             {
                 animator.SetTrigger("Attack3");
-                fire[0].SetActive(true);
-                fire[1].SetActive(true);
+                if (!destroyed)
+                {
+                    fire[0].SetActive(true);
+                    fire[1].SetActive(true);
+                }
                 collisionPlayerTimer = 0f;
                 yield return new WaitForSeconds(damage3_1Interval);
                 if (collisionPlayerTimer >= damage3_1Interval)
@@ -247,8 +250,11 @@ public class MagmadarController : MonoBehaviour
                 if (collisionPlayerTimer >= damage3_4Interval)
                     player.PlayerHP -= minPlayerDamage;
                 yield return new WaitForSeconds(fireFinishInterval - damage3_4Interval);
-                fire[0].SetActive(false);
-                fire[1].SetActive(false);
+                if (!destroyed)
+                {
+                    fire[0].SetActive(false);
+                    fire[1].SetActive(false);
+                }
                 //Debug.Log("fire");
                 yield return new WaitForSeconds(attackInterval - fireFinishInterval);
             }

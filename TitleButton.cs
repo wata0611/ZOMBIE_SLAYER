@@ -4,34 +4,32 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-//裏処理でロードできるようにする。
 public class TitleButton : MonoBehaviour
 {
+    [SerializeField] float loadStartTimer = 1f;
     AudioSource audioSource;
     float SEInterval = 4f;
     public AudioClip startSE;
     bool start = false;
     Image image;
-    //private AsyncOperation async;
+    private AsyncOperation async;
 
     void Start()
     {
         image= GameObject.FindGameObjectWithTag("TitlePanel").GetComponent<Image>();
         audioSource = GetComponent<AudioSource>();
-        //SceneManager.LoadScene(LoadSceneName, LoadSceneMode.Additive);
-        //async = SceneManager.LoadSceneAsync("GameScene", LoadSceneMode.Additive);
-        //async.allowSceneActivation = false;
+        StartCoroutine(LoadStart());
     }
 
-    /**public void GameStart()
+    IEnumerator LoadStart()
     {
-        StartCoroutine(TitleSETimer());
-    }**/
+        yield return new WaitForSeconds(loadStartTimer);
+        async = SceneManager.LoadSceneAsync("GameScene", LoadSceneMode.Additive);
+        async.allowSceneActivation = false;
+    }
 
     public void OnClick()
     {
-        //async = SceneManager.LoadSceneAsync("GameScene", LoadSceneMode.Additive);
-        //async.allowSceneActivation = false;
         StartCoroutine(TitleSETimer());
     }
 
@@ -49,17 +47,7 @@ public class TitleButton : MonoBehaviour
             transform.parent.gameObject.GetComponent<AudioSource>().enabled = false;
             audioSource.PlayOneShot(startSE);
             yield return new WaitForSeconds(SEInterval);
-            SceneManager.LoadSceneAsync("GameScene");
-            //async.allowSceneActivation = true;
-            //SceneManager.UnloadSceneAsync("Title");
+            async.allowSceneActivation = true;
         }
     }
-
-    /**IEnumerator SceneLoad()
-    {
-        async.allowSceneActivation = true;
-        yield return null;
-        SceneManager.UnloadScene(LoadSceneName);
-        yield return null;
-    }**/
 }

@@ -26,6 +26,7 @@ public class TitanController : MonoBehaviour
     [SerializeField] int score = 2500;
     [SerializeField] string targetTag = "Player";
     [SerializeField] float deadTime = 3;
+    [SerializeField] GameObject Sphere;
 
     public AudioClip titanAttack;
     public AudioClip titanDeath;
@@ -62,7 +63,6 @@ public class TitanController : MonoBehaviour
                 StartCoroutine(Stan());
             if (hp <= 0)
             {
-                gameManager.bossBattle = false;
                 StartCoroutine(Dead());
                 destroyed = true;
             }
@@ -147,7 +147,8 @@ public class TitanController : MonoBehaviour
         animator.SetTrigger("Dead");
         audiosource.PlayOneShot(titanDeath);
         yield return new WaitForSeconds(deadTime);
-        player.normalBGMSource.enabled = true;
+        //player.normalBGMSource.enabled = true;
+        Instantiate(Sphere, new Vector3(transform.position.x, transform.position.y + 1.0f, transform.position.z), Quaternion.identity);
         Destroy(gameObject);
     }
 

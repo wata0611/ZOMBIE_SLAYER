@@ -196,7 +196,7 @@ public class HandGunController : MonoBehaviour
         weaponTransform.position = Vector3.MoveTowards(weaponTransform.position, gunPos, Time.deltaTime);
     }
 
-    public void MuzzleFlash()
+    void MuzzleFlash()
     {
         if (muzzleFlashPrefab != null)
         {

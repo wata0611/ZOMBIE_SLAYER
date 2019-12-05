@@ -132,7 +132,7 @@ public class LMGController : MonoBehaviour
         if (unlockedLevel == 3)
             damage++;
         if (unlockedLevel == 4)
-            shootInterval -= 0.5f;
+            shootInterval -= 0.05f;
         if (unlockedLevel == 5)
             maxAmmo += 25;
         if (unlockedLevel == 6)
@@ -142,7 +142,7 @@ public class LMGController : MonoBehaviour
         if (unlockedLevel == 8)
             damage++;
         if (unlockedLevel == 9)
-            shootInterval -= 0.5f;
+            shootInterval -= 0.05f;
         if (unlockedLevel == 10)
             maxAmmo += 25;
     }
@@ -158,7 +158,7 @@ public class LMGController : MonoBehaviour
         weaponTransform.position = gunPos;
     }
 
-    public void MuzzleFlash()
+    void MuzzleFlash()
     {
         if (muzzleFlashPrefab != null)
         {
@@ -178,7 +178,7 @@ public class LMGController : MonoBehaviour
         Ray ray = new Ray(transform.position, transform.forward);
         RaycastHit hit;
         player.shootCount++;
-
+        MuzzleFlash();
         //レイを飛して、ヒットしたオブジェクトの情報を得る。
         if (Physics.Raycast(ray, out hit, shootRange))
         {

@@ -134,6 +134,7 @@ public class EnemyController : MonoBehaviour
         Stop();
         gameManager.Score += score;
         gameManager.Kill++;
+        gameManager.totalKill++;
         animator.SetTrigger("Dead");
         boxCollider.enabled = false;
         capsuleCollider.enabled = false;
