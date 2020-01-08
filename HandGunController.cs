@@ -18,15 +18,22 @@ public class HandGunController : MonoBehaviour
     [SerializeField] public float reroadInterval = 0.1f;
     [SerializeField] float maxWave = 0.01f;
     [SerializeField] float minWave = 0.001f;
+    [SerializeField] public float stopReicleRadius = 5;
+    [SerializeField] public float notAimReticleRadius = 10;
+    [SerializeField] public float limitReticleRadius = 15;
     [SerializeField] GameObject muzzleFlashPrefab;
     [SerializeField] Vector3 muzzleFlashScale;
     [SerializeField] Text ammoText;
     [SerializeField] GameObject hitEffectPrefab;
     [SerializeField] GameObject hitEffectPrefab2;
+    [SerializeField] FirstPersonGunController player;
+    [SerializeField] GameManager gameManager;
+    [SerializeField] Text levelUpText;
 
     public AudioClip shootSound;
     public AudioClip reroadSound;
     public AudioClip shootmodechangeSound;
+    public AudioClip hitSe; 
 
     AudioSource audioSource;
 
@@ -39,8 +46,6 @@ public class HandGunController : MonoBehaviour
     float waveH = 0f;
     float waveV = 0f;
     public GameObject muzzleFlash;
-    FirstPersonGunController player;
-    GameManager gameManager;
     public Transform weaponTransform;
     Transform aimTarget;
     public Transform notAimTarget;
@@ -57,8 +62,6 @@ public class HandGunController : MonoBehaviour
         aimTarget = GameObject.FindGameObjectWithTag("AimTarget3").GetComponent<Transform>();
         notAimTarget = GameObject.FindGameObjectWithTag("NotAimTarget3").GetComponent<Transform>();
         audioSource = GetComponent<AudioSource>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         HandGun2= GameObject.FindGameObjectWithTag("HandGun2").GetComponent<HandGunController2>();
         HandGun2Obj = GameObject.FindGameObjectWithTag("HandGun2").transform.parent.gameObject;
     }
@@ -141,21 +144,37 @@ public class HandGunController : MonoBehaviour
     {
         //将来的にshootRangeのところは武器のブレ補正にする
         if (unlockedLevel == 1)
+        {
             maxAmmo += 4;
+        }
         if (unlockedLevel == 2)
+        {
             shootRange += 10;
+        }
         if (unlockedLevel == 3)
+        {
             damage++;
+        }
         if (unlockedLevel == 4)
+        {
             shootRange += 10;
+        }
         if (unlockedLevel == 5)
+        {
             maxAmmo += 4;
+        }
         if (unlockedLevel == 6)
+        {
             shootRange += 10;
+        }
         if (unlockedLevel == 7)
+        {
             damage++;
+        }
         if (unlockedLevel == 8)
+        {
             maxAmmo += 4;
+        }
         if (unlockedLevel == 9)
         {
             dual = true;
@@ -214,6 +233,7 @@ public class HandGunController : MonoBehaviour
     public void shoot()
     {
         Ray ray = new Ray(transform.position, transform.forward);
+        //Ray ray = Camera.main.ScreenPointToRay(new Vector3(Random.Range(-limitReticleRadius,limitReticleRadius)+Screen.width/2,Random.Range(-limitReticleRadius,limitReticleRadius)+Screen.height/2 , 0f));
         RaycastHit hit;
         player.shootCount++;
         MuzzleFlash();
@@ -233,6 +253,7 @@ public class HandGunController : MonoBehaviour
                     else
                     {
                         hitEffect = Instantiate(hitEffectPrefab, hit.point, Quaternion.FromToRotation(Vector3.forward, hit.normal));
+                        //hitEffect.transform.parent = hit.transform;
                     }
                 }
                 else
@@ -243,17 +264,24 @@ public class HandGunController : MonoBehaviour
             string tagName = hit.collider.gameObject.tag;
             if (tagName == "EnemyHead")
             {
-                gameManager.Score += gameManager.headScore;
                 EnemyController enemy = hit.collider.transform.parent.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage * 5;
-                player.hitCount++;
+                if (!enemy.GetDead())
+                {
+                    gameManager.Score += gameManager.headScore;
+                    enemy.Hp -= damage * 5;
+                    player.hitCount++;
+                }
             }
             if (tagName == "Enemy")
             {
-                gameManager.Score += gameManager.bodyScore;
                 EnemyController enemy = hit.collider.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage;
-                player.hitCount++;
+                if (!enemy.GetDead())
+                {
+                    gameManager.Score += gameManager.bodyScore;
+                    enemy.Hp -= damage;
+                    player.hitCount++;
+                    player.audioSource.PlayOneShot(hitSe);
+                }
             }
             if (tagName == "Mutant")
             {
@@ -277,7 +305,7 @@ public class HandGunController : MonoBehaviour
             }
             if (tagName == "Titan")
             {
-                TitanController titan = hit.collider.transform.gameObject.GetComponent<TitanController>();
+                TitanController titan = hit.collider.transform.root.gameObject.GetComponent<TitanController>();
                 if (!titan.GetDestroyed())
                 {
                     gameManager.Score += gameManager.bodyScore;

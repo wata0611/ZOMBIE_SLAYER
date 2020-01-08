@@ -40,7 +40,7 @@ public class OrkberserkerController : MonoBehaviour
     public AudioClip orkBerserkerDeath;
     public AudioClip orkBerserkerRage;
     AudioSource audiosource;
-    AudioSource bossBGMSource;
+    public AudioSource bossBGMSource;
 
     bool attacking = false;
     bool raging = false;
@@ -70,7 +70,6 @@ public class OrkberserkerController : MonoBehaviour
         set
         {
             hp = Mathf.Clamp(value, 0, maxHp);
-            Debug.Log(hp);
             if (hp <= maxHp / 2)
                 StartCoroutine(Rage());
             if (hp <= maxHp / 10)

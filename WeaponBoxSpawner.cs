@@ -20,7 +20,7 @@ public class WeaponBoxSpawner : MonoBehaviour
         {
             spawnPosNum = Random.Range(1, 3);
             if (spawnPosNum == 1)
-                Instantiate(weaponBox, new Vector3(165f, 20f, 107.5f), Quaternion.Euler(0f, 180f, 0f));
+                Instantiate(weaponBox, new Vector3(172f, 20f, 118f), Quaternion.Euler(0f, -90f, 0f));
             else if (spawnPosNum == 2)
                 Instantiate(weaponBox, new Vector3(87f, 20f, 122f), Quaternion.Euler(0f, 90f, 0f));
             spawnEnabled = false;

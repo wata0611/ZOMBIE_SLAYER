@@ -7,6 +7,7 @@ public class ScifiBulletExplosionController : MonoBehaviour
     [SerializeField] int damage = 5;
     SphereCollider sphereCollider;
     bool once = false;
+    bool destroyed = false;
     AudioSource audioSource;
     public AudioClip explosionSE;
 
@@ -50,7 +51,7 @@ public class ScifiBulletExplosionController : MonoBehaviour
         }
         if (collider.gameObject.tag == "Titan")
         {
-            TitanController titan = collider.transform.gameObject.GetComponent<TitanController>();
+            TitanController titan = collider.transform.root.gameObject.GetComponent<TitanController>();
             if (!titan.GetDestroyed())
                 titan.TitanHp -= damage;
         }

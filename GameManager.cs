@@ -2,20 +2,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] int maxScore = 99999999;
     [SerializeField] int maxKill = 100;
-    //[SerializeField] Canvas mainCanvas;
-    //[SerializeField] Canvas titleCanvas;
+    [SerializeField] int initSensitivityLevel = 10;
+    [SerializeField] float maxSensitivity = 8.0f;
+    [SerializeField] int sensitivityLevel = 10;
+    [SerializeField] Canvas mainCanvas;
     [SerializeField] GameObject pauseCanvas;
     [SerializeField] Text scoreText;
     [SerializeField] Text killText;
     [SerializeField] Text totalKillText;
     [SerializeField] FirstPersonAIO firstPerson;
-    [SerializeField] FirstPersonGunController gunController;
+    [SerializeField] FirstPersonGunController player;
     [SerializeField] Text centerText;
     [SerializeField] EnemySpawner spawner;
     [SerializeField] float waitTime = 2;
@@ -24,18 +27,30 @@ public class GameManager : MonoBehaviour
     [SerializeField] Text roundText;
     [SerializeField] public int bodyScore = 10;
     [SerializeField] public int headScore = 50;
+    [SerializeField] M4A1Controller M4A1;
+    [SerializeField] LMGController LMG;
+    [SerializeField] HandGunController HandGun;
+    [SerializeField] ScifiGunController ScifiGun;
+    [SerializeField] Text sensitivityText;
+    [SerializeField] Slider sensitivitySlider;
+    [SerializeField] bool Debug = false;
 
     public AudioClip nextRound;
     public AudioClip bonus;
     public AudioClip playerDeath;
+    public AudioClip buttonSe;
+    public AudioClip menuSe;
     public AudioSource audioSource;
 
     int score = 0;
     int kill = 0;
+    int minSensitivityLevel = 1;
+    int maxSensitivityLevel = 20;
     public int totalKill = 0;
     int bonusScore;
     double tmpBonusScore;
     public int round = 1;
+    bool gameStart = false;
     public bool gameOver = false;
     bool roundClear = false;
     public bool gameClear = false;
@@ -43,12 +58,6 @@ public class GameManager : MonoBehaviour
     public bool lastBossBattle = false;
     bool once = false;
     bool wait = true;
-    FirstPersonGunController player;
-    M4A1Controller M4A1;
-    LMGController LMG;
-    HandGunController HandGun;
-    ScifiGunController ScifiGun;
-    KnifeController Knife;
 
     Material m;
     public Material BossSky;
@@ -83,26 +92,29 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        SceneManager.UnloadScene("Title");
+        if(!Debug)
+            SceneManager.UnloadScene("Title");
         InitGame();
         bonusScore = 0;
         tmpBonusScore = 0;
         audioSource = GetComponent<AudioSource>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        M4A1 = GameObject.FindGameObjectWithTag("M4A1").GetComponent<M4A1Controller>();
-        LMG = GameObject.FindGameObjectWithTag("LMG").GetComponent<LMGController>();
-        HandGun = GameObject.FindGameObjectWithTag("HandGun").GetComponent<HandGunController>();
-        ScifiGun= GameObject.FindGameObjectWithTag("ScifiGun").GetComponent<ScifiGunController>();
-        Knife = GameObject.FindGameObjectWithTag("Knife").GetComponent<KnifeController>();
         pauseCanvas.SetActive(false);
         StartCoroutine(GameStart());
         m = new Material(RenderSettings.skybox);
         RenderSettings.skybox = m;
+        if (PlayerPrefs.HasKey("SensitivityLevel"))
+            sensitivityLevel = PlayerPrefs.GetInt("SensitivityLevel");
+        else
+            sensitivityLevel = initSensitivityLevel;
+        sensitivitySlider.value = sensitivityLevel;
+        firstPerson.mouseSensitivity = ((float)sensitivityLevel / maxSensitivityLevel) * maxSensitivity;
+        sensitivityText.text = sensitivityLevel.ToString();
     }
 
     void Update()
     {
-        //PauseManager();
+        if(!gameClear && !gameOver && !roundClear && !gameStart)
+            PauseManager();
         if (player.end && wait)
         {
             wait = false;
@@ -147,16 +159,137 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P))
         {
             print("pause");
-            //pauseCanvas.SetActive(true);
-            //Time.timeScale = 0f;
-            firstPerson.enabled = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            pauseCanvas.SetActive(true);
+            if(!roundClear)
+                spawner.spawnEnabled = false;
+            if (GameObject.FindGameObjectWithTag("Titan") != null)
+            {
+                GameObject titan = GameObject.FindGameObjectWithTag("Titan");
+                titan.GetComponent<NavMeshAgent>().enabled = false;
+                titan.GetComponent<Animator>().enabled = false;
+                titan.GetComponent<TitanController>().bossBGMSource.Pause();
+                titan.GetComponent<TitanController>().enabled = false;
+            }
+            if (GameObject.FindGameObjectWithTag("Reptile") != null)
+            {
+                GameObject[] reptiles = GameObject.FindGameObjectsWithTag("Reptile");
+                foreach (GameObject reptile in reptiles)
+                {
+                    if (reptile.transform.root.GetComponent<ReptileController>().bossBGMSource != null)
+                        reptile.transform.root.GetComponent<ReptileController>().bossBGMSource.Pause();
+                    reptile.transform.root.GetComponent<ReptileController>().enabled = false;
+                    reptile.transform.root.GetComponent<NavMeshAgent>().enabled = false;
+                    reptile.transform.root.GetComponent<Animator>().enabled = false;
+                }
+            }
+            if (GameObject.FindGameObjectWithTag("Magmadar") != null)
+            {
+                GameObject magmadar = GameObject.FindGameObjectWithTag("Magmadar").transform.root.gameObject;
+                magmadar.GetComponent<NavMeshAgent>().enabled = false;
+                magmadar.GetComponent<Animator>().enabled = false;
+                magmadar.GetComponent<MagmadarController>().bossBGMSource.Pause();
+                magmadar.GetComponent<MagmadarController>().enabled = false;
+            }
+            if (GameObject.FindGameObjectWithTag("OrkBerserker") != null)
+            {
+                GameObject ork = GameObject.FindGameObjectWithTag("OrkBerserker").transform.root.gameObject;
+                ork.GetComponent<NavMeshAgent>().enabled = false;
+                ork.GetComponent<Animator>().enabled = false;
+                ork.GetComponent<OrkberserkerController>().bossBGMSource.Pause();
+                ork.GetComponent<OrkberserkerController>().enabled = false;
+            }
+            foreach (GameObject enemy1 in spawner.EnemiesTargetOfPlayer)
+            {
+                enemy1.GetComponent<EnemyController>().enabled = false;
+                enemy1.GetComponent<Animator>().enabled = false;
+                enemy1.GetComponent<NavMeshAgent>().enabled = false;
+            }
+            foreach (GameObject enemy2 in spawner.EnemiesTargetOfWarehouse)
+            {
+                enemy2.GetComponent<EnemyController>().enabled = false;
+                enemy2.GetComponent<Animator>().enabled = false;
+                enemy2.GetComponent<NavMeshAgent>().enabled = false;
+            }
+            foreach (GameObject mutant in spawner.Mutants)
+            {
+                mutant.GetComponent<MutantController>().enabled = false;
+                mutant.GetComponent<Animator>().enabled = false;
+                mutant.GetComponent<NavMeshAgent>().enabled = false;
+            }
+            firstPerson.playerCanMove = false;
+            firstPerson.enableCameraMovement = false;
+            player.normalBGMSource.Pause();
+            player.enabled = false;
+            audioSource.PlayOneShot(menuSe);
         }
         if (Input.GetKeyDown(KeyCode.Q))
         {
             print("unpause");
-            //Time.timeScale = 1f;
-            //pauseCanvas.SetActive(false);
-            firstPerson.enabled = true; ;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            if (GameObject.FindGameObjectWithTag("Titan") != null)
+            {
+                GameObject titan = GameObject.FindGameObjectWithTag("Titan");
+                titan.GetComponent<NavMeshAgent>().enabled = true;
+                titan.GetComponent<Animator>().enabled = true;
+                titan.GetComponent<TitanController>().enabled = true;
+                titan.GetComponent<TitanController>().bossBGMSource.Play();
+            }
+            if (GameObject.FindGameObjectWithTag("Reptile") != null)
+            {
+                GameObject[] reptiles = GameObject.FindGameObjectsWithTag("Reptile");
+                foreach (GameObject reptile in reptiles)
+                {
+                    reptile.transform.root.GetComponent<ReptileController>().enabled = true;
+                    if (reptile.transform.root.GetComponent<ReptileController>().bossBGMSource != null)
+                        reptile.transform.root.GetComponent<ReptileController>().bossBGMSource.Play();
+                    reptile.transform.root.GetComponent<Animator>().enabled = true;
+                    reptile.transform.root.GetComponent<NavMeshAgent>().enabled = true;
+                }
+            }
+            if (GameObject.FindGameObjectWithTag("Magmadar") != null)
+            {
+                GameObject magmadar = GameObject.FindGameObjectWithTag("Magmadar").transform.root.gameObject;
+                magmadar.GetComponent<NavMeshAgent>().enabled = true;
+                magmadar.GetComponent<Animator>().enabled = true;
+                magmadar.GetComponent<MagmadarController>().enabled = true;
+                magmadar.GetComponent<MagmadarController>().bossBGMSource.Play();
+            }
+            if (GameObject.FindGameObjectWithTag("OrkBerserker") != null)
+            {
+                GameObject ork = GameObject.FindGameObjectWithTag("OrkBerserker");
+                ork.GetComponent<NavMeshAgent>().enabled = true;
+                ork.GetComponent<Animator>().enabled = true;
+                ork.GetComponent<OrkberserkerController>().enabled = true;
+                ork.GetComponent<OrkberserkerController>().bossBGMSource.Play();
+            }
+            foreach (GameObject enemy1 in spawner.EnemiesTargetOfPlayer)
+            {
+                enemy1.GetComponent<NavMeshAgent>().enabled = true;
+                enemy1.GetComponent<Animator>().enabled = true;
+                enemy1.GetComponent<EnemyController>().enabled = true;
+            }
+            foreach (GameObject enemy2 in spawner.EnemiesTargetOfWarehouse)
+            {
+                enemy2.GetComponent<NavMeshAgent>().enabled = true;
+                enemy2.GetComponent<Animator>().enabled = true;
+                enemy2.GetComponent<EnemyController>().enabled = true;
+            }
+            foreach (GameObject mutant in spawner.Mutants)
+            {
+                mutant.GetComponent<NavMeshAgent>().enabled = true;
+                mutant.GetComponent<Animator>().enabled = true;
+                mutant.GetComponent<MutantController>().enabled = true;
+            }
+            if (!roundClear)
+                spawner.spawnEnabled = true;
+            pauseCanvas.SetActive(false);
+            firstPerson.playerCanMove = true;
+            firstPerson.enableCameraMovement = true;
+            player.enabled = true;
+            player.normalBGMSource.Play();
         }
     }
 
@@ -201,11 +334,12 @@ public class GameManager : MonoBehaviour
     {
         Score = 0;
         Kill = 0;
+        gameStart = true;
         firstPerson.playerCanMove = false;
         firstPerson.enableCameraMovement = true;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        gunController.shootEnabled = false;
+        player.shootEnabled = false;
     }
 
     public void StartGamebyButton()
@@ -229,22 +363,25 @@ public class GameManager : MonoBehaviour
         centerText.text = "Round" + round.ToString();
         firstPerson.playerCanMove = true;
         firstPerson.enableCameraMovement = true;
-        gunController.shootEnabled = true;
+        player.shootEnabled = true;
         SetSpawners(true);
         yield return new WaitForSeconds(1);
         centerText.text = "";
         centerText.enabled = false;
+        spawner.spawnEnabled = true;
+        gameStart = false;
         yield return null;
     }
 
     public IEnumerator GameOver()
     {
         gameOver = true;
+        PlayerPrefs.Save();
         firstPerson.playerCanMove = false;
         firstPerson.enableCameraMovement = false;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        gunController.shootEnabled = false;
+        player.shootEnabled = false;
         SetSpawners(false);
         centerText.enabled = true;
         centerText.text = "Game Over\n" + "Score " + Score.ToString();
@@ -253,7 +390,6 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(waitDeath);
         centerText.text = "";
         centerText.enabled = false;
-        //gameOver = false;
         naichilab.RankingLoader.Instance.SendScoreAndShowRanking(Score);
         //yield return SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
@@ -261,11 +397,12 @@ public class GameManager : MonoBehaviour
     IEnumerator GameClear()
     {
         gameClear = true;
+        PlayerPrefs.Save();
         firstPerson.playerCanMove = false;
         firstPerson.enableCameraMovement = true;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        gunController.shootEnabled = false;
+        player.shootEnabled = false;
         SetSpawners(false);
         centerText.enabled = true;
         centerText.text = "Game Clear!!";
@@ -274,7 +411,6 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(waitTime);
         centerText.text = "";
         centerText.enabled = false;
-        //gameClear = false;
         naichilab.RankingLoader.Instance.SendScoreAndShowRanking(Score);
         //yield return SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
@@ -303,7 +439,7 @@ public class GameManager : MonoBehaviour
             centerText.text = "Round" + round.ToString();
             firstPerson.playerCanMove = true;
             firstPerson.enableCameraMovement = true;
-            gunController.shootEnabled = true;
+            player.shootEnabled = true;
             audioSource.PlayOneShot(nextRound);
             yield return new WaitForSeconds(1);
             centerText.text = "";
@@ -318,34 +454,33 @@ public class GameManager : MonoBehaviour
 
     IEnumerator SceneChanger()
     {
-        Debug.Log(1);
         yield return new WaitForSeconds(4.0f);
-        Debug.Log(2);
         if (gameClear)
         {
-            Debug.Log("Clear");
             SceneManager.LoadScene("Ending");
         }
         else if (gameOver)
         {
-            Debug.Log("GameOver");
             SceneManager.LoadScene("Title");
         }
     }
 
     void StopEnemies()
     {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        GameObject[] mutants = GameObject.FindGameObjectsWithTag("Mutant");
-        foreach(GameObject enemy in enemies)
+        foreach(GameObject EnemyTargetOfPlayer in spawner.EnemiesTargetOfPlayer)
         {
-            EnemyController controller = enemy.GetComponent<EnemyController>();
+            EnemyController controller = EnemyTargetOfPlayer.GetComponent<EnemyController>();
             controller.moveEnabled = false;
         }
-        foreach(GameObject mutant in mutants)
+        foreach (GameObject EnemyTargetOfWarehouse in spawner.EnemiesTargetOfWarehouse)
         {
-            MutantController mController = mutant.GetComponent<MutantController>();
-            mController.mutantMoveEnabled = false;
+            EnemyController controller = EnemyTargetOfWarehouse.GetComponent<EnemyController>();
+            controller.moveEnabled = false;
+        }
+        foreach (GameObject Mutant in spawner.Mutants)
+        {
+            MutantController controller = Mutant.GetComponent<MutantController>();
+            controller.mutantMoveEnabled = false;
         }
     }
 
@@ -369,6 +504,41 @@ public class GameManager : MonoBehaviour
     public int GetmaxKill()
     {
         return maxKill;
+    }
+
+    public void MouseSensitivitySliderChanger()
+    {
+        sensitivityLevel = (int)sensitivitySlider.value;
+        firstPerson.mouseSensitivity = ((float)sensitivityLevel / maxSensitivityLevel) * maxSensitivity;
+        PlayerPrefs.SetInt("SensitivityLevel", sensitivityLevel);
+        sensitivityText.text = sensitivityLevel.ToString();
+        audioSource.PlayOneShot(buttonSe);
+    }
+
+    public void MouseSensitivityUpButtonChanger()
+    {
+        if (sensitivityLevel < maxSensitivityLevel)
+        {
+            sensitivityLevel++;
+            sensitivitySlider.value = sensitivityLevel;
+            firstPerson.mouseSensitivity = ((float)sensitivityLevel / maxSensitivityLevel) * maxSensitivity;
+            PlayerPrefs.SetInt("SensitivityLevel", sensitivityLevel);
+            sensitivityText.text = sensitivityLevel.ToString();
+            audioSource.PlayOneShot(buttonSe);
+        }
+    }
+
+    public void MouseSensitivityDownButtonChanger()
+    {
+        if(sensitivityLevel > minSensitivityLevel)
+        {
+            sensitivityLevel--;
+            sensitivitySlider.value = sensitivityLevel;
+            firstPerson.mouseSensitivity = ((float)sensitivityLevel / maxSensitivityLevel) * maxSensitivity;
+            PlayerPrefs.SetInt("SensitivityLevel", sensitivityLevel);
+            sensitivityText.text = sensitivityLevel.ToString();
+            audioSource.PlayOneShot(buttonSe);
+        }
     }
 
 }

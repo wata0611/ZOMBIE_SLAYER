@@ -41,11 +41,11 @@ public class VendingMachine2 : MonoBehaviour
     {
         if (collider.gameObject.tag == "Player")
         {
-            if (Input.GetKeyDown(KeyCode.Z) && player.GetEnhancePlayerWalkSpeedScore() <= gameManager.Score && unlockedVendingMachine)
+            if (Input.GetKeyDown(KeyCode.C) && player.GetEnhancePlayerWalkSpeedScore() <= gameManager.Score && unlockedVendingMachine)
             {
                 StartCoroutine(player.EnhancePlayerWalkSpeedTimer());
             }
-            if (Input.GetKeyDown(KeyCode.U) && player.getBlueKey && !unlockedVendingMachine)
+            if (Input.GetKeyDown(KeyCode.V) && player.getBlueKey && !unlockedVendingMachine)
             {
 
                 unlockedVendingMachine = true;

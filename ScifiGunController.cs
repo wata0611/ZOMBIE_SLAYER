@@ -17,6 +17,7 @@ public class ScifiGunController : MonoBehaviour
     [SerializeField] public float reroadInterval = 0.1f;
     [SerializeField] Text ammoText;
     [SerializeField] GameObject[] bullet;
+    [SerializeField] FirstPersonGunController player;
 
     public AudioClip shootSound;
     public AudioClip reroadSound;
@@ -27,8 +28,6 @@ public class ScifiGunController : MonoBehaviour
     public bool got = false;
     int ammo = 0;
     int magazine = 0;
-    FirstPersonGunController player;
-    GameManager gameManager;
     public Transform weaponTransform;
     Transform aimTarget;
     public Transform notAimTarget;
@@ -42,8 +41,6 @@ public class ScifiGunController : MonoBehaviour
         aimTarget = GameObject.FindGameObjectWithTag("AimTarget4").GetComponent<Transform>();
         notAimTarget = GameObject.FindGameObjectWithTag("NotAimTarget4").GetComponent<Transform>();
         audioSource = GetComponent<AudioSource>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
     }
 
     public int GetUnlockedLevel()
@@ -102,7 +99,7 @@ public class ScifiGunController : MonoBehaviour
 
     void BulletModeChanger()
     {
-        if (Input.GetKeyDown(KeyCode.C) )
+        if (Input.GetKeyDown(KeyCode.E) )
         {
             audioSource.PlayOneShot(bulletmodechangeSound);
             if (bulletMode == BulletMode.EXPLOSION)
@@ -180,10 +177,10 @@ public class ScifiGunController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        BulletModeChanger();
         if (player.haveWeapon1 == FirstPersonGunController.HaveWeapon.ScifiGun)
         {
             Aim();
+            BulletModeChanger();
             ammoText.text = ammo.ToString("D3") + "/" + Magazine.ToString("D3");
         }
     }

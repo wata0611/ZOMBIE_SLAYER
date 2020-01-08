@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GargoyleController : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class GargoyleController : MonoBehaviour
     [SerializeField] GameObject[] Sphere;
     [SerializeField] Material[] materials;
     [SerializeField] GameObject OrkBerserker;
+    [SerializeField] Text discription;
     GameObject titanSphere;
     GameObject reptileSphere;
     GameObject magmadarSphere;
@@ -21,6 +23,7 @@ public class GargoyleController : MonoBehaviour
     int count = 0;
     bool once = false;
     bool absorbing = false;
+    bool textChangeEnabled= true;
 
     // Start is called before the first frame update
     void Start()
@@ -139,7 +142,38 @@ public class GargoyleController : MonoBehaviour
 
     void OnTriggerStay(Collider collider)
     {
-        if (collider.gameObject.tag == "Player" && Input.GetKeyDown(KeyCode.U))
-            StartCoroutine(Absorb());
+        if (collider.gameObject.tag == "Player")
+        {
+            discription.enabled = true;
+            if (textChangeEnabled)
+            {
+                textChangeEnabled = false;
+                discription.text = "V:Use Shpere";
+            }
+            if (Input.GetKeyDown(KeyCode.V)) {
+                if (player.getTitanSphere || player.getReptileSphere || player.getMagmadarSphere)
+                    StartCoroutine(Absorb());
+                else if(!absorbing)
+                {
+                    discription.text = "You Don't Have Sphere";
+                    Invoke("DeleteText", 1.5f);
+                }
+            }
+        }
+    }
+
+    void OnTriggerExit(Collider collider)
+    {
+        if (collider.gameObject.tag == "Player")
+        {
+            textChangeEnabled = true;
+            discription.text = "";
+            discription.enabled = false;
+        }
+    }
+
+    void DeleteText()
+    {
+        textChangeEnabled = true;
     }
 }

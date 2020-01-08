@@ -47,9 +47,6 @@ public class MutantController : MonoBehaviour
     Transform target;
     GameManager gameManager;
     FirstPersonGunController player;
-    EnemySpawner spawner;
-    MeshCollider[] meshColliders;
-    CapsuleCollider capsuleCollider;
 
     public bool GetAttacking()
     {
@@ -78,22 +75,31 @@ public class MutantController : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    void Start()
+    /**void Start()
     {
         animator = GetComponent<Animator>();
         rigidbody = GetComponent<Rigidbody>();
         agent = GetComponent<NavMeshAgent>();
-        meshColliders = GetComponentsInChildren<MeshCollider>();
-        
-        capsuleCollider = GameObject.FindGameObjectWithTag("MutantHead").GetComponent<CapsuleCollider>(); 
+
         audiosource = GetComponent<AudioSource>();
         target = GameObject.FindGameObjectWithTag(targetTag).transform;
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        //spawner = GameObject.FindGameObjectWithTag("Spawner").GetComponent<EnemySpawner>();
+        InitCharacter();
+    }**/
+
+    void OnEnable()
+    {
+        animator = GetComponent<Animator>();
+        rigidbody = GetComponent<Rigidbody>();
+        agent = GetComponent<NavMeshAgent>();
+
+        audiosource = GetComponent<AudioSource>();
+        target = GameObject.FindGameObjectWithTag(targetTag).transform;
+        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
         InitCharacter();
     }
-
 
     // Update is called once per frame
     void Update()
@@ -106,6 +112,9 @@ public class MutantController : MonoBehaviour
 
     void InitCharacter()
     {
+        agent.speed = 1.0f;
+        mutantMoveEnabled = true;
+        Destroyed = false;
         MutantHp = maxHp;
         moveSpeed = agent.speed;
     }
@@ -135,13 +144,16 @@ public class MutantController : MonoBehaviour
             gameManager.Kill++;
             gameManager.totalKill++;
             animator.SetTrigger("Dead");
-            rigidbody.isKinematic = true;
             audiosource.PlayOneShot(mutantDeath);
             if (player.getKeyCount < 3)
                 Instantiate(key[player.getKeyCount++], this.gameObject.transform.position, Quaternion.identity);
-            Debug.Log(player.getKeyCount);
             yield return new WaitForSeconds(deadTime);
-            Destroy(gameObject);
+            if (transform.childCount > 3)
+            {
+                for (int i = 3; i < transform.childCount; i++) 
+                    Destroy(transform.GetChild(i).gameObject);
+            }
+            gameObject.SetActive(false);
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class WeaponBoxController : MonoBehaviour
 {
@@ -10,12 +11,14 @@ public class WeaponBoxController : MonoBehaviour
 
     public int choosedIndex = 0;
     bool opening = false;
+    bool textChangeEnabled = true;
     float weaponRotate = 0f;
     public bool weaponDestroyed = false;
     FirstPersonGunController player;
     GameManager gameManager;
     WeaponBoxSpawner spawner;
     GameObject boxTop;
+    Text discription;
 
     public AudioClip open;
     AudioSource audioSource;
@@ -32,16 +35,34 @@ public class WeaponBoxController : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
         boxTop = GameObject.FindGameObjectWithTag("BoxTop");
         spawner = GameObject.FindGameObjectWithTag("WeaponBoxSpawner").GetComponent<WeaponBoxSpawner>();
+        discription = GameObject.Find("Discription").GetComponent<Text>();
         audioSource = GetComponent<AudioSource>();
     }
     // Update is called once per frame
 
     void OnTriggerStay(Collider collider) 
     {
-        if(collider.gameObject.tag == "Player" && !opening && Input.GetKey(KeyCode.O) && score <= gameManager.Score)
+        if(collider.gameObject.tag == "Player")
         {
-            gameManager.Score -= score;
-            StartCoroutine(OpenBox());
+            if (!opening)
+            {
+                discription.enabled = true;
+                discription.text = "V:Open Box(" + score.ToString() + ")";
+                if (Input.GetKey(KeyCode.V) && score <= gameManager.Score)
+                {
+                    gameManager.Score -= score;
+                    StartCoroutine(OpenBox());
+                }
+            }
+        }
+    }
+
+    void OnTriggerExit(Collider collider)
+    {
+        if (collider.gameObject.tag == "Player")
+        {
+            discription.text = "";
+            discription.enabled = false;
         }
     }
 
@@ -80,7 +101,7 @@ public class WeaponBoxController : MonoBehaviour
             weaponRotate = 90f;
         Instantiate(weaponPrefabs[choosedIndex], weaponPos, Quaternion.Euler(0f,transform.rotation.eulerAngles.y + weaponRotate,0f));
     }
-    
+
     void Update()
     {
         if (opening)

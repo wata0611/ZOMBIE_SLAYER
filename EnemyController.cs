@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.UI;
 
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(Rigidbody))]
@@ -12,11 +11,13 @@ public class EnemyController : MonoBehaviour
 
     public bool moveEnabled = true;
 
-    [SerializeField] int maxHp = 3;
+    [SerializeField] int initMaxHp = 3;
     [SerializeField] int playerDamage = 5;
     [SerializeField] int warehouseDamage = 5;
-    [SerializeField] float attackInterval = 1.0f;
-    [SerializeField] int score = 100;
+    [SerializeField] float attackInterval1 = 1.0f;
+    [SerializeField] float attackInterval2 = 0.8f;
+    [SerializeField] int score1 = 100;
+    [SerializeField] int score2 = 500;
     [SerializeField] string targetTag = "Player";
     [SerializeField] float deadTime = 3;
 
@@ -26,12 +27,16 @@ public class EnemyController : MonoBehaviour
     AudioSource audiosource;
 
     bool attacking = false;
-    bool Destroyed = false;
+    bool dead = true;
     int hp;
+    int maxHp;
+    int score;
     float moveSpeed;
+    float moveSpeed2;
+    float attackInterval;
     Animator animator;
-    BoxCollider boxCollider;
-    CapsuleCollider capsuleCollider;
+    public BoxCollider boxCollider;
+    public CapsuleCollider capsuleCollider;
     Rigidbody rigidbody;
     NavMeshAgent agent;
     Transform target;
@@ -39,7 +44,6 @@ public class EnemyController : MonoBehaviour
     GameManager gameManager;
     FirstPersonGunController player;
     WarehouseController warehouse;
-    EnemySpawner spawner;
 
     public int Hp
     {
@@ -47,12 +51,19 @@ public class EnemyController : MonoBehaviour
         {
             hp = Mathf.Clamp(value, 0, maxHp);
             if (hp <= 0)
+            {
                 StartCoroutine(Dead());
+            }
         }
         get
         {
             return hp;
         }
+    }
+
+    public bool GetDead()
+    {
+        return dead;
     }
 
     // Start is called before the first frame update
@@ -70,36 +81,55 @@ public class EnemyController : MonoBehaviour
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
         warehouse = GameObject.FindGameObjectWithTag("Warehouse").GetComponentInChildren<WarehouseController>();
-        spawner = GameObject.FindGameObjectWithTag("Spawner").GetComponent<EnemySpawner>();
         InitCharacter();
     }
-    
+
+    void OnEnable()
+    {
+        animator = GetComponent<Animator>();
+        boxCollider = GetComponent<BoxCollider>();
+        capsuleCollider = transform.Find("Head").gameObject.GetComponent<CapsuleCollider>();
+        rigidbody = GetComponent<Rigidbody>();
+        agent = GetComponent<NavMeshAgent>();
+        audiosource = GetComponent<AudioSource>();
+
+        target = GameObject.FindGameObjectWithTag(targetTag).transform;
+        targetPlayer = GameObject.FindGameObjectWithTag("Player").transform;
+        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
+        warehouse = GameObject.FindGameObjectWithTag("Warehouse").GetComponentInChildren<WarehouseController>();
+        InitCharacter();
+    }
+
     // Update is called once per frame
     void Update()
     {
         if (moveEnabled)
         {
-            //audiosource.Play(umeki);
             Move();
         }
         else
         {
-            //audiosource.Stop(umeki);
             Stop();
         }
     }
 
-    void InitCharacter()
+    public void InitCharacter()
     {
+        agent.speed = 1.0f;
+        moveEnabled = true;
+        dead = false;
         moveSpeed = agent.speed;
-        maxHp += gameManager.round - 1;
-        if(Random.Range(1,21) <= gameManager.round - 2)
+        maxHp =initMaxHp + gameManager.round - 1;
+        attackInterval = attackInterval1;
+        score = score1;
+        if (Random.Range(1, 21) <= gameManager.round - 2)
         {
-            moveSpeed += 1f;
-            attackInterval -= 0.2f;
-            score = score * 5;
+            agent.speed = 1.5f;
+            moveSpeed = agent.speed;
+            attackInterval = attackInterval2;
+            score = score2;
         }
-
         Hp = maxHp;
     }
 
@@ -128,42 +158,36 @@ public class EnemyController : MonoBehaviour
         animator.SetFloat("Speed", agent.speed, 0.1f, Time.deltaTime);
     }
 
+    //使いまわす。
     IEnumerator Dead()
     {
-        moveEnabled = false;
-        Stop();
-        gameManager.Score += score;
-        gameManager.Kill++;
-        gameManager.totalKill++;
-        animator.SetTrigger("Dead");
-        boxCollider.enabled = false;
-        capsuleCollider.enabled = false;
-        rigidbody.isKinematic = true;
-        audiosource.PlayOneShot(zombieDeath);
-        yield return new WaitForSeconds(deadTime);
-        Destroy(gameObject);
+        if (!dead)
+        {
+            dead = true;
+            moveEnabled = false;
+            Stop();
+            gameManager.Score += score;
+            gameManager.Kill++;
+            gameManager.totalKill++;
+            animator.SetTrigger("Dead");
+            audiosource.PlayOneShot(zombieDeath);
+            yield return new WaitForSeconds(deadTime);
+            if (transform.childCount > 18) 
+            {
+                for (int i = 18; i < transform.childCount; i++)
+                    Destroy(transform.GetChild(i).gameObject);
+            }
+            gameObject.SetActive(false);
+        }
     }
 
     private void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.tag == "Player" && targetTag == "Player" && moveEnabled)
+        if (collision.gameObject.tag == "Player" && targetTag == "Player" && moveEnabled && Hp > 0)
             StartCoroutine(AttackTimer());
-        else if (collision.gameObject.tag == "Warehouse" && warehouse.WarehouseHP > 0 && targetTag == "Warehouse" && moveEnabled)
+        else if (collision.gameObject.tag == "Warehouse" && warehouse.WarehouseHP > 0 && targetTag == "Warehouse" && moveEnabled && Hp > 0)
             StartCoroutine(AttackTimer());
     }
-
-    /**private void OnCollisionEnter(Collision colliision)
-    {
-        if(colliision.gameObject.tag == "Obstacle")
-        {
-            if (!Destroyed)
-            {
-                Destroy(this.gameObject);
-                spawner.enemySpawnCount--;
-                Destroyed = true;
-            }
-        }
-    }**/
 
     IEnumerator AttackTimer()
     {

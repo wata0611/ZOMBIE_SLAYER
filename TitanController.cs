@@ -31,8 +31,8 @@ public class TitanController : MonoBehaviour
     public AudioClip titanAttack;
     public AudioClip titanDeath;
     public AudioClip titanRage;
-    AudioSource audiosource;
-    AudioSource bossBGMSource;
+    public AudioSource audiosource;
+    public AudioSource bossBGMSource;
 
     bool attacking = false;
     bool raging = false;

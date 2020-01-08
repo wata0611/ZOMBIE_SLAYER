@@ -27,8 +27,8 @@ public class ReptileController : MonoBehaviour
 
     public AudioClip reptileAttack;
     public AudioClip reptileDeath;
-    AudioSource audiosource;
-    AudioSource bossBGMSource;
+    public AudioSource audiosource;
+    public AudioSource bossBGMSource;
 
     bool attacking = false;
     bool raging = false;
@@ -53,7 +53,6 @@ public class ReptileController : MonoBehaviour
         set
         {
             hp = Mathf.Clamp(value, 0, maxHp);
-            //Debug.Log(hp);
             if (hp <= maxHp / 2)
                 raging = true;
             if (hp % (maxHp / 5) == 0 && hp != maxHp && hp != 0)
@@ -79,7 +78,7 @@ public class ReptileController : MonoBehaviour
         meshCollider = GameObject.FindGameObjectWithTag("Reptile").GetComponent<MeshCollider>();
         audiosource = GetComponent<AudioSource>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        if (!player.reptileKilled)
+        //if (!player.reptileKilled)
             bossBGMSource= GameObject.FindGameObjectWithTag("BossAudioSource3").GetComponent<AudioSource>();
         target = GameObject.FindGameObjectWithTag(targetTag).transform;
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();

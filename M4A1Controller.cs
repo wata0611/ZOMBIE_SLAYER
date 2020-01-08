@@ -22,6 +22,9 @@ public class M4A1Controller : MonoBehaviour
     [SerializeField] Vector3 muzzleFlashScale;
     [SerializeField] Text ammoText;
     [SerializeField] GameObject hitEffectPrefab;
+    [SerializeField] FirstPersonGunController player;
+    [SerializeField] GameManager gameManager;
+    [SerializeField] Text levelUpText;
 
     public AudioClip shootSound;
     public AudioClip reroadSound;
@@ -36,8 +39,6 @@ public class M4A1Controller : MonoBehaviour
     float waveH = 0f;
     float waveV = 0f;
     public GameObject muzzleFlash;
-    FirstPersonGunController player;
-    GameManager gameManager;
     public Transform weaponTransform;
     Transform aimTarget;
     public Transform notAimTarget;
@@ -52,8 +53,6 @@ public class M4A1Controller : MonoBehaviour
         aimTarget = GameObject.FindGameObjectWithTag("AimTarget").GetComponent<Transform>();
         notAimTarget = GameObject.FindGameObjectWithTag("NotAimTarget").GetComponent<Transform>();
         audioSource = GetComponent<AudioSource>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
     }
 
     public int GetMaxMagazine()
@@ -116,7 +115,7 @@ public class M4A1Controller : MonoBehaviour
 
     void ShootModeChanger()
     {
-        if (Input.GetKeyDown(KeyCode.C) && unlockedLevel > 0)
+        if (Input.GetKeyDown(KeyCode.E) && unlockedLevel > 0)
         {
             audioSource.PlayOneShot(shootmodechangeSound);
             if (shootMode == ShootMode.AUTO)
@@ -222,17 +221,23 @@ public class M4A1Controller : MonoBehaviour
             string tagName = hit.collider.gameObject.tag;
             if (tagName == "EnemyHead")
             {
-                gameManager.Score += gameManager.headScore;
                 EnemyController enemy = hit.collider.transform.parent.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage * 5;
-                player.hitCount++;
+                if (!enemy.GetDead())
+                {
+                    gameManager.Score += gameManager.headScore;
+                    enemy.Hp -= damage * 5;
+                    player.hitCount++;
+                }
             }
             if (tagName == "Enemy")
             {
-                gameManager.Score += gameManager.bodyScore;
                 EnemyController enemy = hit.collider.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage;
-                player.hitCount++;
+                if (!enemy.GetDead())
+                {
+                    gameManager.Score += gameManager.bodyScore;
+                    enemy.Hp -= damage;
+                    player.hitCount++;
+                }
             }
             if (tagName == "Mutant")
             {
@@ -256,7 +261,7 @@ public class M4A1Controller : MonoBehaviour
             }
             if (tagName == "Titan")
             {
-                TitanController titan = hit.collider.transform.gameObject.GetComponent<TitanController>();
+                TitanController titan = hit.collider.transform.root.gameObject.GetComponent<TitanController>();
                 if (!titan.GetDestroyed())
                 {
                     gameManager.Score += gameManager.bodyScore;
@@ -377,10 +382,10 @@ public class M4A1Controller : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        ShootModeChanger();
         if (player.haveWeapon1 == FirstPersonGunController.HaveWeapon.M4A1)
         {
             Aim();
+            ShootModeChanger();
             ammoText.text = ammo.ToString("D3") + "/" + Magazine.ToString("D3");
         }
     }

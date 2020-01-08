@@ -33,17 +33,23 @@ public class ScifiBulletController : MonoBehaviour
         string tagName = collision.gameObject.tag;
         if (tagName == "EnemyHead")
         {
-            gameManager.Score += gameManager.headScore;
             EnemyController enemy = collision.transform.parent.gameObject.GetComponent<EnemyController>();
-            enemy.Hp -= damage * 5;
-            player.hitCount++;
+            if (!enemy.GetDead())
+            {
+                gameManager.Score += gameManager.headScore;
+                enemy.Hp -= damage * 5;
+                player.hitCount++;
+            }
         }
         if (tagName == "Enemy")
         {
-            gameManager.Score += gameManager.bodyScore;
             EnemyController enemy = collision.gameObject.GetComponent<EnemyController>();
-            enemy.Hp -= damage;
-            player.hitCount++;
+            if (!enemy.GetDead())
+            {
+                gameManager.Score += gameManager.bodyScore;
+                enemy.Hp -= damage;
+                player.hitCount++;
+            }
         }
         if (tagName == "Mutant")
         {
@@ -67,7 +73,7 @@ public class ScifiBulletController : MonoBehaviour
         }
         if (tagName == "Titan")
         {
-            TitanController titan = collision.transform.gameObject.GetComponent<TitanController>();
+            TitanController titan = collision.transform.root.gameObject.GetComponent<TitanController>();
             if (!titan.GetDestroyed())
             {
                 gameManager.Score += gameManager.bodyScore;

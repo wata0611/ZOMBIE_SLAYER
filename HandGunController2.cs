@@ -19,6 +19,8 @@ public class HandGunController2 : MonoBehaviour
     [SerializeField] Vector3 muzzleFlashScale;
     [SerializeField] GameObject hitEffectPrefab;
     [SerializeField] GameObject hitEffectPrefab2;
+    [SerializeField] FirstPersonGunController player;
+    [SerializeField] GameManager gameManager;
 
     public AudioClip shootSound;
     public AudioClip reroadSound;
@@ -34,8 +36,6 @@ public class HandGunController2 : MonoBehaviour
     float waveH = 0f;
     float waveV = 0f;
     public GameObject muzzleFlash;
-    FirstPersonGunController player;
-    GameManager gameManager;
     public Transform weaponTransform;
     Transform aimTarget;
     public Transform notAimTarget;
@@ -51,8 +51,6 @@ public class HandGunController2 : MonoBehaviour
         weaponTransform = transform.parent.gameObject.GetComponent<Transform>();
         notAimTarget = GameObject.FindGameObjectWithTag("NotAimTarget3_2").GetComponent<Transform>();
         audioSource = GetComponent<AudioSource>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
-        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         weaponOut = GameObject.FindGameObjectWithTag("WeaponOut").GetComponent<Transform>();
         HandGun1 = GameObject.FindGameObjectWithTag("HandGun").GetComponent<HandGunController>();
     }
@@ -145,17 +143,23 @@ public class HandGunController2 : MonoBehaviour
             string tagName = hit.collider.gameObject.tag;
             if (tagName == "EnemyHead")
             {
-                gameManager.Score += gameManager.headScore;
                 EnemyController enemy = hit.collider.transform.parent.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage * 5;
-                player.hitCount++;
+                if (!enemy.GetDead())
+                {
+                    gameManager.Score += gameManager.headScore;
+                    enemy.Hp -= damage * 5;
+                    player.hitCount++;
+                }
             }
             if (tagName == "Enemy")
             {
-                gameManager.Score += gameManager.bodyScore;
                 EnemyController enemy = hit.collider.gameObject.GetComponent<EnemyController>();
-                enemy.Hp -= damage;
-                player.hitCount++;
+                if (!enemy.GetDead())
+                {
+                    gameManager.Score += gameManager.bodyScore;
+                    enemy.Hp -= damage;
+                    player.hitCount++;
+                }
             }
             if (tagName == "Mutant")
             {
@@ -179,7 +183,7 @@ public class HandGunController2 : MonoBehaviour
             }
             if (tagName == "Titan")
             {
-                TitanController titan = hit.collider.transform.gameObject.GetComponent<TitanController>();
+                TitanController titan = hit.collider.transform.root.gameObject.GetComponent<TitanController>();
                 if (!titan.GetDestroyed())
                 {
                     gameManager.Score += gameManager.bodyScore;

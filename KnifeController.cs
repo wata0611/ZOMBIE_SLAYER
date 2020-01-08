@@ -59,19 +59,25 @@ public class KnifeController : MonoBehaviour
     {
         if (collider.gameObject.tag == "EnemyHead" && attacking)
         {
-            audioSource.PlayOneShot(hitSE);
-            gameManager.Score += hitScore;
             EnemyController enemy = collider.transform.parent.gameObject.GetComponent<EnemyController>();
-            enemy.Hp -= damage * 5;
-            player.hitCount++;
+            if (!enemy.GetDead())
+            {
+                audioSource.PlayOneShot(hitSE);
+                gameManager.Score += hitScore;
+                enemy.Hp -= damage * 5;
+                player.hitCount++;
+            }
         }
         if (collider.gameObject.tag == "Enemy" && attacking)
         {
-            audioSource.PlayOneShot(hitSE);
-            gameManager.Score += hitScore;
             EnemyController enemy = collider.gameObject.GetComponent<EnemyController>();
-            enemy.Hp -= damage;
-            player.hitCount++;
+            if (!enemy.GetDead())
+            {
+                audioSource.PlayOneShot(hitSE);
+                gameManager.Score += hitScore;
+                enemy.Hp -= damage;
+                player.hitCount++;
+            }
         }
     }
 

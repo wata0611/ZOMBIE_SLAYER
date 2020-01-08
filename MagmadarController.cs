@@ -32,8 +32,8 @@ public class MagmadarController : MonoBehaviour
     public AudioClip magmadarDeath;
     public AudioClip magmadarRage;
     public AudioClip fireSE;
-    AudioSource audiosource;
-    AudioSource bossBGMSource;
+    public AudioSource audiosource;
+    public AudioSource bossBGMSource;
 
     bool attacking = false;
     bool raging = false;
@@ -223,7 +223,6 @@ public class MagmadarController : MonoBehaviour
                 animator.SetTrigger("Attack1");
                 collisionPlayerTimer = 0f;
                 yield return new WaitForSeconds(damage1Interval);
-                //Debug.Log(collisionPlayerTimer);
                 if (collisionPlayerTimer >= damage1Interval)
                     player.PlayerHP -= minPlayerDamage;
                 yield return new WaitForSeconds(attackInterval - damage1Interval);
@@ -255,7 +254,6 @@ public class MagmadarController : MonoBehaviour
                     fire[0].SetActive(false);
                     fire[1].SetActive(false);
                 }
-                //Debug.Log("fire");
                 yield return new WaitForSeconds(attackInterval - fireFinishInterval);
             }
             attacking = false;

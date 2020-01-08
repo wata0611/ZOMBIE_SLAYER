@@ -15,21 +15,26 @@ public class SupplyZone : MonoBehaviour
 
     void OnTriggerStay(Collider collider) {
         if (collider.gameObject.tag == "Player") {
-            if (Input.GetKey(KeyCode.R) && warehouse.WarehouseHP < warehouse.GetmaxWarehouseHP() && player.GetRepairScore() <= gameManager.Score)
+            discriptionText.enabled = true;
+            discriptionText.text = "C:Repair Warehouse(" + player.GetRepairScore().ToString() + ")\n"
+                + "V:Supply Magzine(" + player.GetSupplyScore().ToString() + ")\n"
+                + "X:Unlocked Weapon Level("+player.GetUnlockedScore()+")\n"
+                + "Z:Heel Player("+player.GetHeelScore().ToString()+")";
+            if (Input.GetKey(KeyCode.C) && warehouse.WarehouseHP < warehouse.GetmaxWarehouseHP() && player.GetRepairScore() <= gameManager.Score)
             {
                 StartCoroutine(player.RepairTimer());
             }
             if (supplyEnabled)
             {
-                if (Input.GetKeyDown(KeyCode.Z) && player.GetSupplyScore() <= gameManager.Score)
+                if (Input.GetKeyDown(KeyCode.V) && player.GetSupplyScore() <= gameManager.Score)
                 {
                     StartCoroutine(player.SupplyTimer());
                 }
-                if (Input.GetKeyDown(KeyCode.U))
+                if (Input.GetKeyDown(KeyCode.X))
                 {
                     StartCoroutine(player.UnlockedTimer());
                 }
-                if (Input.GetKey(KeyCode.H) && player.PlayerHP < player.GetmaxPlayerHP() && player.GetHeelScore() <= gameManager.Score)
+                if (Input.GetKey(KeyCode.Z) && player.PlayerHP < player.GetmaxPlayerHP() && player.GetHeelScore() <= gameManager.Score)
                 {
                     StartCoroutine(player.HeelTimer());
                 }   
@@ -37,16 +42,8 @@ public class SupplyZone : MonoBehaviour
         }
     }
 
-    void OnTrigerEnter(Collider collider)
-    {
-        if (collider.gameObject.tag == "Player")
-        {
-            discriptionText.enabled = true;
-            discriptionText.text = "r:repair\n" + "z:supply\n" + "h:heel\n" + "u:unlocked";
-        }
-    }
 
-    void OnTrigerExit(Collider collider)
+    void OnTriggerExit(Collider collider)
     {
         if (collider.gameObject.tag == "Player"){
             discriptionText.text = "";
@@ -60,7 +57,7 @@ public class SupplyZone : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<FirstPersonGunController>();
         warehouse = GameObject.FindGameObjectWithTag("Warehouse").GetComponentInChildren<WarehouseController>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
-        discriptionText.enabled = false;
+        //discriptionText.enabled = false;
     }
 
     // Update is called once per frame

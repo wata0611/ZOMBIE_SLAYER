@@ -82,7 +82,7 @@ public class ScfiBulletFireController : MonoBehaviour
             hitTimer += Time.deltaTime;
             if (hitTimer >= lifeTime / 10)
             {
-                TitanController titan = transform.parent.transform.gameObject.GetComponent<TitanController>();
+                TitanController titan = transform.root.transform.gameObject.GetComponent<TitanController>();
                 if (!titan.GetDestroyed())
                     titan.TitanHp -= damage;
                 hitTimer = 0f;
@@ -149,7 +149,8 @@ public class ScfiBulletFireController : MonoBehaviour
             OrkberserkerController orkBerserker = transform.root.gameObject.GetComponent<OrkberserkerController>();
             if (hitTimer >= lifeTime / 10)
             {
-                orkBerserker.OrkBerserkerHp -= damage;
+                if(!orkBerserker.GetDestroyed())
+                    orkBerserker.OrkBerserkerHp -= damage;
                 hitTimer = 0f;
             }
         }
@@ -159,8 +160,11 @@ public class ScfiBulletFireController : MonoBehaviour
             OrkberserkerController orkBerserker = transform.root.gameObject.GetComponent<OrkberserkerController>();
             if (hitTimer >= lifeTime / 10)
             {
-                orkBerserker.OrkBerserkerHp -= damage;
-                orkBerserker.OrkBerserkerWeaponHP -= damage;
+                if (!orkBerserker.GetDestroyed())
+                {
+                    orkBerserker.OrkBerserkerHp -= damage;
+                    orkBerserker.OrkBerserkerWeaponHP -= damage;
+                }
                 hitTimer = 0f;
             }
         }
@@ -170,7 +174,8 @@ public class ScfiBulletFireController : MonoBehaviour
             OrkberserkerController orkBerserker = transform.root.gameObject.GetComponent<OrkberserkerController>();
             if (hitTimer >= lifeTime / 10)
             {
-                orkBerserker.OrkBerserkerHp -= damage * 5;
+                if (!orkBerserker.GetDestroyed())
+                    orkBerserker.OrkBerserkerHp -= damage * 5;
                 hitTimer = 0f;
             }
         }

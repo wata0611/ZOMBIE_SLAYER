@@ -34,6 +34,21 @@ public class FirstPersonGunController : MonoBehaviour
     [SerializeField] Text reroadText;
     [SerializeField] Text descriptionText;
     [SerializeField] Image damageEffect;
+    [SerializeField] FirstPersonAIO firstPersonAIO;
+    [SerializeField] GameManager gameManager;
+    [SerializeField] WarehouseController warehouse;
+    [SerializeField] public M4A1Controller M4A1;
+    [SerializeField] public LMGController LMG;
+    [SerializeField] HandGunController HandGun;
+    [SerializeField] HandGunController2 HandGun2;
+    [SerializeField] public ScifiGunController ScifiGun;
+    [SerializeField] public GameObject M4A1Obj;
+    [SerializeField] public GameObject LMGObj;
+    [SerializeField] public GameObject HandGunObj;
+    [SerializeField] public GameObject HandGun2Obj;
+    [SerializeField] public GameObject ScifiGunObj;
+    [SerializeField] public GameObject Knife;
+    [SerializeField] Image[] reticle;
 
     public AudioClip repairSound;
     public AudioClip supplySound;
@@ -62,6 +77,7 @@ public class FirstPersonGunController : MonoBehaviour
     bool motionLeft = false;
     bool movingWeapon1 = false;
     bool movingWeapon2 = false;
+    bool slowWalkSpeed = false;
     public bool getRedKey = false;
     public bool getYellowKey = false;
     public bool getBlueKey = false;
@@ -76,10 +92,6 @@ public class FirstPersonGunController : MonoBehaviour
     public bool gotLMG = false;
     public bool gotScifiGun = false;
     public bool end = false;
-    int ammo = 0;
-    int damage = 0;
-    int magazine = 0;
-    int maxMagzie = 0;
     int playerHP = 0;
     int tmpPlayerHP = 0;
     int tmpHeelLevel = 0;
@@ -93,29 +105,14 @@ public class FirstPersonGunController : MonoBehaviour
     float beatStep = 0f;
     float playerAutoHeelTimer = 0f;
     float playerAutoHeelTime = 5f;
-    float getKeyTimer = 0f;
-    float Timer = 0f;
-    GameManager gameManager;
-    WarehouseController warehouse;
+    float initFirstPersonWalkSpeed;
+    float reticleRadius;
     Transform moveRight;
     Transform moveLeft;
     Transform playerCamera;
     Transform cameraST;
     Transform weaponOut;
     Transform knifeStart;
-    FirstPersonAIO firstPersonAIO;
-    public M4A1Controller M4A1;
-    public LMGController LMG;
-    HandGunController HandGun;
-    HandGunController2 HandGun2;
-    public ScifiGunController ScifiGun;
-    public GameObject M4A1Obj;
-    public GameObject LMGObj;
-    public GameObject HandGunObj;
-    public GameObject HandGun2Obj;
-    public GameObject ScifiGunObj;
-    public GameObject Knife;
-
 
     public int GetSupplyScore()
     {
@@ -132,9 +129,30 @@ public class FirstPersonGunController : MonoBehaviour
         return heelScore;
     }
 
-    public int GetUnlockedScore()
+    public string GetUnlockedScore()
     {
-        return unlockedScore;
+        switch (haveWeapon1) {
+            case HaveWeapon.M4A1:
+                if (M4A1.unlockedLevel < 10)
+                    return ((M4A1.unlockedLevel + 1) * 500).ToString();
+                else
+                    return "Max Level";
+            case HaveWeapon.LMG:
+                if (LMG.unlockedLevel < 10)
+                    return ((LMG.unlockedLevel + 1) * 500).ToString();
+                else
+                    return "Max Level";
+            case HaveWeapon.HandGun:
+                if (HandGun.unlockedLevel < 10)
+                    return ((HandGun.unlockedLevel + 1) * 500).ToString();
+                else
+                    return "Max Level";
+            case HaveWeapon.ScifiGun:
+                return "Max Level";
+            case HaveWeapon.Knife:
+                return "Max Level";
+        }
+        return "";
     }
 
     public double GetShootCount()
@@ -200,26 +218,13 @@ public class FirstPersonGunController : MonoBehaviour
         tmpPlayerHP = maxPlayerHP;
         tmpHeelLevel = heelLevel;
         tmpRepairLevel = repairLevel;
-        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
-        warehouse = GameObject.FindGameObjectWithTag("Warehouse").GetComponentInChildren<WarehouseController>();
+        initFirstPersonWalkSpeed = firstPersonAIO.walkSpeed;
         audioSource = GetComponent<AudioSource>();
         moveRight = GameObject.FindGameObjectWithTag("MoveRight").GetComponent<Transform>();
         moveLeft = GameObject.FindGameObjectWithTag("MoveLeft").GetComponent<Transform>();
         cameraST = GameObject.FindGameObjectWithTag("CameraPosition").GetComponent<Transform>();
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Transform>();
-        firstPersonAIO = GameObject.FindGameObjectWithTag("Player").GetComponent<FirstPersonAIO>();
         normalBGMSource = GameObject.FindGameObjectWithTag("Player").GetComponent<AudioSource>();
-        M4A1Obj = GameObject.FindGameObjectWithTag("M4A1").transform.parent.gameObject;
-        LMGObj = GameObject.FindGameObjectWithTag("LMG").transform.parent.gameObject;
-        HandGunObj = GameObject.FindGameObjectWithTag("HandGun").transform.parent.gameObject;
-        HandGun2Obj = GameObject.FindGameObjectWithTag("HandGun2").transform.parent.gameObject;
-        ScifiGunObj = GameObject.FindGameObjectWithTag("ScifiGun").transform.parent.gameObject;
-        M4A1 = GameObject.FindGameObjectWithTag("M4A1").GetComponent<M4A1Controller>();
-        LMG = GameObject.FindGameObjectWithTag("LMG").GetComponent<LMGController>();
-        HandGun = GameObject.FindGameObjectWithTag("HandGun").GetComponent<HandGunController>();
-        HandGun2 = GameObject.FindGameObjectWithTag("HandGun2").GetComponent<HandGunController2>();
-        ScifiGun= GameObject.FindGameObjectWithTag("ScifiGun").GetComponent<ScifiGunController>();      
-        Knife = GameObject.FindGameObjectWithTag("Knife");
         weaponOut = GameObject.FindGameObjectWithTag("WeaponOut").GetComponent<Transform>();
         knifeStart= GameObject.FindGameObjectWithTag("KnifeStart").GetComponent<Transform>();
         M4A1Obj.SetActive(false);
@@ -324,6 +329,8 @@ public class FirstPersonGunController : MonoBehaviour
     void Update()
     {
         DamageEffect();
+        WalkSpeedChanger();
+        //MoveReticle();
         if (movingWeapon1)
             MovingWeapon1();
         if (movingWeapon2)
@@ -339,19 +346,73 @@ public class FirstPersonGunController : MonoBehaviour
             playerAutoHeelTimer += Time.deltaTime;
         }
         Reroad();
-        if (Input.GetKeyDown(KeyCode.Y))
+        if (Input.GetKeyDown(KeyCode.LeftShift))
             StartCoroutine(SwitchTimer());
+        
+    }
+
+    void MoveReticle()
+    {
+        if (haveWeapon1 == HaveWeapon.M4A1)
+            StartCoroutine(ReroadTimer());
+        else if (haveWeapon1 == HaveWeapon.LMG)
+            StartCoroutine(ReroadTimer());
+        else if (haveWeapon1 == HaveWeapon.HandGun)
+        {
+            if (slowWalkSpeed)
+            {
+                for (int i = 0; i < reticle.Length; i++)
+                {
+                    reticle[i].transform.localPosition = Vector3.MoveTowards(reticle[i].transform.localPosition, new Vector3(0, 0, 0), Time.deltaTime * 50);
+                }
+                if (reticle[0].transform.localPosition.y < 5.0f)
+                {
+                    for (int i = 0; i < reticle.Length; i++)
+                        reticle[i].enabled = false;
+                }
+
+            }
+            else if (!slowWalkSpeed)
+            {
+                if (!reticle[0].enabled)
+                {
+                    for (int i = 0; i < reticle.Length; i++)
+                    {
+                        reticle[i].enabled = true;
+                    }
+                }
+                reticle[0].transform.localPosition = Vector3.MoveTowards(reticle[0].transform.localPosition, new Vector3(0, HandGun.notAimReticleRadius + 5f, 0), Time.deltaTime*50);
+                reticle[1].transform.localPosition = Vector3.MoveTowards(reticle[1].transform.localPosition, new Vector3(0, -HandGun.notAimReticleRadius - 5f, 0), Time.deltaTime*50);
+                reticle[2].transform.localPosition = Vector3.MoveTowards(reticle[2].transform.localPosition, new Vector3(HandGun.notAimReticleRadius + 5f, 0, 0), Time.deltaTime*50);
+                reticle[3].transform.localPosition = Vector3.MoveTowards(reticle[3].transform.localPosition, new Vector3(-HandGun.notAimReticleRadius - 5f, 0, 0), Time.deltaTime*50);
+            }
+        }
+        else if (haveWeapon1 == HaveWeapon.ScifiGun)
+            StartCoroutine(ReroadTimer());
+    }
+
+    void WalkSpeedChanger()
+    {
+        if (Input.GetMouseButtonDown(1) && !slowWalkSpeed) {
+            slowWalkSpeed = true;
+            firstPersonAIO.walkSpeed = firstPersonAIO.walkSpeed / 2;
+        }
+        else if(Input.GetMouseButtonUp(1) && slowWalkSpeed)
+        {
+            slowWalkSpeed = false;
+            firstPersonAIO.walkSpeed = initFirstPersonWalkSpeed;
+        }
     }
 
     void Reroad()
     {
-        if (haveWeapon1 == HaveWeapon.M4A1 && M4A1.Ammo < M4A1.maxAmmo && M4A1.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
+        if (haveWeapon1 == HaveWeapon.M4A1 && M4A1.Ammo < M4A1.maxAmmo && M4A1.Magazine > 0 && Input.GetKey(KeyCode.R))
             StartCoroutine(ReroadTimer());
-        else if (haveWeapon1 == HaveWeapon.LMG && LMG.Ammo < LMG.maxAmmo && LMG.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
+        else if (haveWeapon1 == HaveWeapon.LMG && LMG.Ammo < LMG.maxAmmo && LMG.Magazine > 0 && Input.GetKey(KeyCode.R))
             StartCoroutine(ReroadTimer());
-        else if (haveWeapon1 == HaveWeapon.HandGun && HandGun.Ammo < HandGun.maxAmmo && HandGun.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
+        else if (haveWeapon1 == HaveWeapon.HandGun && HandGun.Ammo < HandGun.maxAmmo && HandGun.Magazine > 0 && Input.GetKey(KeyCode.R))
             StartCoroutine(ReroadTimer());
-        else if(haveWeapon1 == HaveWeapon.ScifiGun && ScifiGun.Ammo < ScifiGun.maxAmmo && ScifiGun.Magazine > 0 && (Input.GetKey(KeyCode.M) || Input.GetKey(KeyCode.Space)))
+        else if(haveWeapon1 == HaveWeapon.ScifiGun && ScifiGun.Ammo < ScifiGun.maxAmmo && ScifiGun.Magazine > 0 && Input.GetKey(KeyCode.R))
             StartCoroutine(ReroadTimer());
     }
 
@@ -584,6 +645,7 @@ public class FirstPersonGunController : MonoBehaviour
         {
             enhancedPlayerWalkSpeed = true;
             firstPersonAIO.walkSpeed += 2f;
+            initFirstPersonWalkSpeed = firstPersonAIO.walkSpeed;
             gameManager.Score -= enhancePlayerWalkSpeedScore;
             audioSource.PlayOneShot(heelSound);
             damageEffect.color = new Color(222f / 255f, 244f / 255f, 135f / 255f, 150f / 255f);
